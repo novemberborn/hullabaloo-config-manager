@@ -1,0 +1,4 @@
+{
+  extends: 'extended-furthest.json5',
+  plugins: ['extended'],
+}

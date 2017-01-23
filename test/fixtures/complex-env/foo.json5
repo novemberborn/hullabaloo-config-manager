@@ -1,0 +1,8 @@
+{
+  plugins: ['foo'],
+  env: {
+    foo: {
+      plugins: ['foo/env/foo']
+    }
+  }
+}

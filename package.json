@@ -29,10 +29,17 @@
     "url": "https://github.com/novemberborn/hullabaloo-config-manager/issues"
   },
   "homepage": "https://github.com/novemberborn/hullabaloo-config-manager#readme",
+  "dependencies": {
+    "es6-error": "^4.0.2",
+    "graceful-fs": "^4.1.11",
+    "json5": "^0.5.1",
+    "lodash.clonedeep": "^4.5.0"
+  },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^7.0.0",
     "ava": "^0.18.1",
     "coveralls": "^2.11.16",
+    "lodash.ismatch": "^4.4.0",
     "nyc": "^10.1.2"
   },
   "nyc": {

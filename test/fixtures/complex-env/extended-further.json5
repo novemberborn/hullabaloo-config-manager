@@ -1,0 +1,9 @@
+{
+  plugins: ['extended-further'],
+  env: {
+    foo: {
+      extends: 'extended.json5',
+      plugins: ['extended-further/env/foo']
+    }
+  }
+}

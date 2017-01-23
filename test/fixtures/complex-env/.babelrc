@@ -1,0 +1,10 @@
+{
+  extends: 'extended.json5',
+  plugins: ['babelrc'],
+  env: {
+    foo: {
+      extends: 'foo.json5',
+      plugins: ['babelrc/env/foo']
+    }
+  }
+}
