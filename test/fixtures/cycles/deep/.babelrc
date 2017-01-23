@@ -1,0 +1,4 @@
+{
+  extends: 'extended.json5',
+  plugins: ['babelrc'],
+}
