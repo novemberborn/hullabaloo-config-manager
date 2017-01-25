@@ -1,0 +1,18 @@
+{
+  plugins: [
+    ['plugin', {label: 'plugin@extended-by-babelrc'}]
+  ],
+  presets: [
+    ['preset', {label: 'preset@extended-by-babelrc'}]
+  ],
+  env: {
+    foo: {
+      plugins: [
+        ['plugin', {label: 'plugin@extended-by-babelrc.foo'}]
+      ],
+      presets: [
+        ['preset', {label: 'preset@extended-by-babelrc.foo'}]
+      ]
+    }
+  }
+}

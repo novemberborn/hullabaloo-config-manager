@@ -1,0 +1,20 @@
+{
+  extends: './extended-by-babelrc.json5',
+  plugins: [
+    ['plugin', {label: 'plugin@babelrc'}]
+  ],
+  presets: [
+    ['preset', {label: 'preset@babelrc'}]
+  ],
+  env: {
+    foo: {
+      plugins: [
+        ['plugin', {label: 'plugin@babelrc.foo'}]
+      ],
+      presets: [
+        ['preset', {label: 'preset@babelrc.foo'}]
+      ]
+    }
+  },
+  sourceMaps: false
+}
