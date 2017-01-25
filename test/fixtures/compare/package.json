@@ -1,0 +1,10 @@
+{
+  "babel": {
+    "plugins": [
+      ["plugin", {"label": "plugin@pkg"}]
+    ],
+    "presets": [
+      ["preset", {"label": "preset@pkg"}]
+    ]
+  }
+}

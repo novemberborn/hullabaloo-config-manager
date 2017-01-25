@@ -1,0 +1,21 @@
+{
+  "extends": "./extended-by-virtual.json5",
+  "plugins": [
+    ["plugin", {"label": "plugin@virtual"}]
+  ],
+  "presets": [
+    ["preset", {"label": "preset@virtual"}]
+  ],
+  "sourceMaps": true,
+  "env": {
+    "foo": {
+      "extends": "./extended-by-virtual-foo.json5",
+      "plugins": [
+        ["plugin", {"label": "plugin@virtual.foo"}]
+      ],
+      "presets": [
+        ["preset", {"label": "preset@virtual.foo"}]
+      ]
+    }
+  }
+}
