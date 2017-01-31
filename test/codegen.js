@@ -10,7 +10,7 @@ const source = path.join(__dirname, 'fixtures', 'empty', 'source.js')
 
 test('stringifies using JSON unless chain is marked as JSON5', async t => {
   const json5 = false
-  const chains = await collector.fromVirtual({}, source, json5)
+  const chains = await collector.fromVirtual({}, source, null, json5)
   const pluginsAndPresets = resolvePluginsAndPresets(chains)
   const code = codegen(chains, pluginsAndPresets)
 
@@ -23,7 +23,7 @@ test('stringifies using JSON unless chain is marked as JSON5', async t => {
 
 test('stringifies using JSON5 if chain is marked as such', async t => {
   const json5 = true
-  const chains = await collector.fromVirtual({}, source, json5)
+  const chains = await collector.fromVirtual({}, source, null, json5)
   const pluginsAndPresets = resolvePluginsAndPresets(chains)
   const code = codegen(chains, pluginsAndPresets)
 

@@ -1,5 +1,9 @@
+import fs from 'fs'
+
 import test from 'ava'
 import isMatch from 'lodash.ismatch'
+import proxyquire from 'proxyquire'
+import td from 'testdouble'
 
 import collector from '../lib/collector'
 import fixture from './helpers/fixture'
@@ -98,7 +102,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 
 {
   const babelrc = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('babelrc', 'source.js'))
-  const pkg = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('pkg', 'source.js'), false)
+  const pkg = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('pkg', 'source.js'), null, false)
   const disabled = () => collector.fromVirtual({ babelrc: false, plugins: ['virtual'] }, fixture('babelrc', 'source.js'))
 
   test('virtual with .babelrc', compare, babelrc, new Set([
@@ -335,4 +339,37 @@ test('chains can be iterated over', async t => {
   const [withoutEnv, foo] = chains
   t.is(withoutEnv, chains.withoutEnv)
   t.is(foo, chains.byEnv.get('foo'))
+})
+
+test('a cache can be used for file access', async t => {
+  const readFile = td.function()
+  for (const filename of [
+    fixture('complex-env', '.babelrc'),
+    fixture('complex-env', 'extended-further.json5'),
+    fixture('complex-env', 'extended.json5'),
+    fixture('complex-env', 'foo.json5')
+  ]) {
+    td.when(readFile(filename)).thenCallback(null, fs.readFileSync(filename))
+  }
+  try {
+    fs.readFileSync(fixture('complex-env', 'package.json'))
+  } catch (err) {
+    td.when(readFile(fixture('complex-env', 'package.json'))).thenCallback(err)
+  }
+
+  const { fromDirectory } = proxyquire('../lib/collector', {
+    'graceful-fs': { readFile }
+  })
+
+  const sharedCache = {
+    files: new Map()
+  }
+
+  await Promise.all([
+    fromDirectory(fixture('complex-env'), sharedCache),
+    fromDirectory(fixture('complex-env'), sharedCache)
+  ])
+
+  const { callCount } = td.explain(readFile)
+  t.is(callCount, 5)
 })
