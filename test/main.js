@@ -3,12 +3,22 @@ import { runInNewContext } from 'vm'
 
 import test from 'ava'
 
-import { fromDirectory, fromVirtual } from '../'
+import { fromDirectory, fromVirtual, prepareCache } from '../'
 import fixture from './helpers/fixture'
 
-test('fromDirectory() resolves options, dependencies, and can generate code', async t => {
+test('fromDirectory() resolves options, dependencies, uses cache, and can generate code', async t => {
   const dir = fixture('compare')
-  const result = await fromDirectory(dir)
+  const cache = prepareCache()
+  const result = await fromDirectory(dir, {cache})
+
+  for (const file of [
+    fixture('compare', '.babelrc'),
+    fixture('compare', 'extended-by-babelrc.json5'),
+    fixture('compare', 'package.json')
+  ]) {
+    t.true(cache.files.has(file))
+  }
+  t.true(cache.pluginsAndPresets.has(dir))
 
   const configModule = {}
   runInNewContext(result.generateModule(), { exports: configModule })
@@ -137,10 +147,25 @@ test('fromDirectory() resolves options, dependencies, and can generate code', as
   })
 })
 
-test('fromVirtual() resolves options, dependencies, and can generate code', async t => {
+test('fromDirectory() works without cache', t => {
+  t.notThrows(fromDirectory(fixture('compare')))
+})
+
+test('fromVirtual() resolves options, dependencies, uses cache, and can generate code', async t => {
   const dir = fixture('compare')
+  const cache = prepareCache()
   const source = fixture('compare', 'virtual.json')
-  const result = await fromVirtual(require(source), source) // eslint-disable-line import/no-dynamic-require
+  const result = await fromVirtual(require(source), source, {cache}) // eslint-disable-line import/no-dynamic-require
+
+  for (const file of [
+    fixture('compare', '.babelrc'),
+    fixture('compare', 'extended-by-babelrc.json5'),
+    fixture('compare', 'extended-by-virtual.json5'),
+    fixture('compare', 'package.json')
+  ]) {
+    t.true(cache.files.has(file))
+  }
+  t.true(cache.pluginsAndPresets.has(dir))
 
   const configModule = {}
   runInNewContext(result.generateModule(), { exports: configModule })
@@ -407,4 +432,16 @@ test('fromVirtual() resolves options, dependencies, and can generate code', asyn
       }
     }
   })
+})
+
+test('fromVirtual() works without cache', t => {
+  const source = fixture('compare', 'virtual.json')
+  t.notThrows(fromVirtual(require(source), source)) // eslint-disable-line import/no-dynamic-require
+})
+
+test('prepareCache()', t => {
+  const cache = prepareCache()
+  t.deepEqual(Object.keys(cache), ['files', 'pluginsAndPresets'])
+  t.true(cache.files instanceof Map)
+  t.true(cache.pluginsAndPresets instanceof Map)
 })

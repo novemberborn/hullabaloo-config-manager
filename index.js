@@ -5,9 +5,9 @@ const collector = require('./lib/collector')
 const resolvePluginsAndPresets = require('./lib/resolvePluginsAndPresets')
 
 class ResolvedConfig {
-  constructor (chains) {
+  constructor (chains, cache) {
     this.chains = chains
-    this.pluginsAndPresets = resolvePluginsAndPresets(chains)
+    this.pluginsAndPresets = resolvePluginsAndPresets(chains, cache)
   }
 
   generateModule () {
@@ -15,15 +15,24 @@ class ResolvedConfig {
   }
 }
 
-function fromDirectory (dir) {
-  return collector.fromDirectory(dir)
-    .then(chains => chains && new ResolvedConfig(chains))
+function fromDirectory (dir, options) {
+  options = options || {}
+  return collector.fromDirectory(dir, options.cache)
+    .then(chains => chains && new ResolvedConfig(chains, options.cache))
 }
 exports.fromDirectory = fromDirectory
 
 function fromVirtual (babelOptions, source, options) {
   options = options || {}
-  return collector.fromVirtual(babelOptions, source, options.json5)
-    .then(chains => chains && new ResolvedConfig(chains))
+  return collector.fromVirtual(babelOptions, source, options.cache, options.json5)
+    .then(chains => chains && new ResolvedConfig(chains, options.cache))
 }
 exports.fromVirtual = fromVirtual
+
+function prepareCache () {
+  return {
+    files: new Map(),
+    pluginsAndPresets: new Map()
+  }
+}
+exports.prepareCache = prepareCache

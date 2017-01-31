@@ -208,6 +208,68 @@ test('caches results', t => {
   t.deepEqual(calls.shift().args, [path.resolve('qux'), 'babel-plugin-baz'])
 })
 
+test('caches can be shared', t => {
+  const resolveFrom = td.function()
+  td.when(resolveFrom(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
+
+  const sharedCache = {
+    pluginsAndPresets: new Map()
+  }
+
+  const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
+    'resolve-from': resolveFrom
+  })
+
+  const config = {
+    options: {
+      plugins: [
+        'foo'
+      ],
+      presets: [
+        'foo'
+      ]
+    },
+    dir: path.resolve('bar')
+  }
+
+  ;[1, 2].forEach(() => {
+    resolvePluginsAndPresets([
+      [
+        config,
+        {
+          options: {
+            plugins: [
+              'foo',
+              'baz'
+            ]
+          },
+          dir: path.resolve('bar')
+        }
+      ],
+      [
+        {
+          options: {
+            plugins: [
+              'foo',
+              'baz'
+            ]
+          },
+          dir: path.resolve('qux')
+        },
+        config
+      ]
+    ], sharedCache)
+  })
+
+  const { callCount, calls } = td.explain(resolveFrom)
+  t.is(callCount, 5)
+  t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-foo'])
+  t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-preset-foo'])
+  t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-baz'])
+  t.deepEqual(calls.shift().args, [path.resolve('qux'), 'babel-plugin-foo'])
+  t.deepEqual(calls.shift().args, [path.resolve('qux'), 'babel-plugin-baz'])
+})
+
 {
   const resolveFrom = td.function()
   td.when(resolveFrom(td.matchers.anything(), td.matchers.anything())).thenReturn(null)
