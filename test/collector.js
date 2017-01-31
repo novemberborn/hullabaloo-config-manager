@@ -358,7 +358,9 @@ test('a cache can be used for file access', async t => {
   }
 
   const { fromDirectory } = proxyquire('../lib/collector', {
-    'graceful-fs': { readFile }
+    './readSafe': proxyquire('../lib/readSafe', {
+      'graceful-fs': { readFile }
+    })
   })
 
   const sharedCache = {
