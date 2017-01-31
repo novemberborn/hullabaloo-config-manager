@@ -1,19 +1,7 @@
 'use strict'
 
-const codegen = require('./lib/codegen')
 const collector = require('./lib/collector')
-const resolvePluginsAndPresets = require('./lib/resolvePluginsAndPresets')
-
-class ResolvedConfig {
-  constructor (chains, cache) {
-    this.chains = chains
-    this.pluginsAndPresets = resolvePluginsAndPresets(chains, cache)
-  }
-
-  generateModule () {
-    return codegen(this.chains, this.pluginsAndPresets)
-  }
-}
+const ResolvedConfig = require('./lib/ResolvedConfig')
 
 function fromDirectory (dir, options) {
   options = options || {}
