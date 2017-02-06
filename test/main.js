@@ -1,10 +1,10 @@
 import path from 'path'
-import { runInNewContext } from 'vm'
 
 import test from 'ava'
 
 import { fromDirectory, fromVirtual, prepareCache } from '../'
 import fixture from './helpers/fixture'
+import runGeneratedCode from './helpers/runGeneratedCode'
 
 test('fromDirectory() resolves options, dependencies, uses cache, and can generate code', async t => {
   const dir = fixture('compare')
@@ -20,12 +20,12 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   }
   t.true(cache.pluginsAndPresets.has(dir))
 
-  const configModule = {}
-  runInNewContext(result.generateModule(), { exports: configModule })
+  const env = {}
+  const configModule = runGeneratedCode(result.generateModule(), env)
 
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
-  t.deepEqual(configModule.withoutEnv('ava'), {
+  t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
         pluginIndex,
@@ -45,7 +45,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     babelrc: false,
     sourceMaps: false,
     env: {
-      ava: {
+      development: {
         plugins: [
           [
             pluginIndex,
@@ -66,7 +66,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     }
   })
 
-  t.deepEqual(configModule.byEnv.foo(), {
+  env.BABEL_ENV = 'foo'
+  t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
         pluginIndex,
@@ -167,12 +168,12 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
   }
   t.true(cache.pluginsAndPresets.has(dir))
 
-  const configModule = {}
-  runInNewContext(result.generateModule(), { exports: configModule })
+  const env = {}
+  const configModule = runGeneratedCode(result.generateModule(), env)
 
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
-  t.deepEqual(configModule.withoutEnv('ava'), {
+  t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
         pluginIndex,
@@ -192,7 +193,7 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
     babelrc: false,
     sourceMaps: true,
     env: {
-      ava: {
+      development: {
         plugins: [
           [
             pluginIndex,
@@ -210,7 +211,7 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
           ]
         ],
         env: {
-          ava: {
+          development: {
             plugins: [
               [
                 pluginIndex,
@@ -228,7 +229,7 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
               ]
             ],
             env: {
-              ava: {
+              development: {
                 plugins: [
                   [
                     pluginIndex,
@@ -253,7 +254,8 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
     }
   })
 
-  t.deepEqual(configModule.byEnv.foo(), {
+  env.BABEL_ENV = 'foo'
+  t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
         pluginIndex,
