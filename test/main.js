@@ -1,10 +1,40 @@
 import path from 'path'
 
 import test from 'ava'
+import proxyquire from 'proxyquire'
 
 import { fromDirectory, fromVirtual, prepareCache } from '../'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
+
+function mockCurrentEnv (env = {}) {
+  return proxyquire('../', {
+    './lib/currentEnv': proxyquire('../lib/currentEnv', {
+      process: {
+        env
+      }
+    })
+  }).currentEnv
+}
+
+test('currentEnv() returns BABEL_ENV, if set', t => {
+  const currentEnv = mockCurrentEnv({
+    BABEL_ENV: 'foo'
+  })
+  t.true(currentEnv() === 'foo')
+})
+
+test('currentEnv() returns NODE_ENV, if no BABEL_ENV', t => {
+  const currentEnv = mockCurrentEnv({
+    NODE_ENV: 'foo'
+  })
+  t.true(currentEnv() === 'foo')
+})
+
+test('currentEnv() falls back to "development", if no BABEL_ENV or NODE_ENV', t => {
+  const currentEnv = mockCurrentEnv()
+  t.true(currentEnv() === 'development')
+})
 
 test('fromDirectory() resolves options, dependencies, uses cache, and can generate code', async t => {
   const dir = fixture('compare')
