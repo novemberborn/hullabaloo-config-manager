@@ -18,7 +18,7 @@ test('stringifies using JSON unless chain is marked as JSON5', async t => {
     byEnv: new Map()
   })
 
-  t.true(code.includes(`exports.withoutEnv = envName => {
+  t.true(code.includes(`const defaultOptions = envName => {
   return {
     "babelrc": false
   }
@@ -34,7 +34,7 @@ test('stringifies using JSON5 if chain is marked as such', async t => {
     byEnv: new Map()
   })
 
-  t.true(code.includes(`exports.withoutEnv = envName => {
+  t.true(code.includes(`const defaultOptions = envName => {
   return {
     babelrc: false
   }
@@ -58,7 +58,9 @@ test('generates a nicely indented module', async t => {
 
   t.is(code, `"use strict"
 
-exports.withoutEnv = envName => {
+const process = require("process")
+
+const defaultOptions = envName => {
   return {
     plugins: [
       [
@@ -80,9 +82,9 @@ exports.withoutEnv = envName => {
   }
 }
 
-exports.byEnv = Object.create(null)
+const envOptions = Object.create(null)
 
-exports.byEnv["foo"] = () => {
+envOptions["foo"] = () => {
   return {
     plugins: [
       [
@@ -122,6 +124,13 @@ exports.byEnv["foo"] = () => {
       }
     }
   }
+}
+
+exports.getOptions = () => {
+  const envName = process.env.BABEL_ENV || process.env.NODE_ENV || "development"
+  return envName in envOptions
+    ? envOptions[envName]()
+    : defaultOptions(envName)
 }
 `)
 })
