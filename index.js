@@ -1,7 +1,10 @@
 'use strict'
 
 const collector = require('./lib/collector')
+const currentEnv = require('./lib/currentEnv')
 const ResolvedConfig = require('./lib/ResolvedConfig')
+
+exports.currentEnv = currentEnv
 
 function fromDirectory (dir, options) {
   options = options || {}
