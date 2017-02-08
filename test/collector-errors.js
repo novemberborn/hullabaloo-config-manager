@@ -28,7 +28,7 @@ test('fails when .babelrc is an array', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { withoutEnv: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-rc', kind))
+    const { defaultChain: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-rc', kind))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-rc', kind, '.babelrc'))
   }
@@ -53,7 +53,7 @@ test('fails when "babel" value in package.json is an array', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { withoutEnv: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-pkg', kind))
+    const { defaultChain: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-pkg', kind))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-pkg', kind, 'package.json'))
   }
@@ -84,7 +84,7 @@ test('fails when extending from an invalid file', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { withoutEnv: [ { options, source } ] } = await collector.fromVirtual({ extends: `${kind}/.babelrc` }, fixture('bad-rc', 'source.js'))
+    const { defaultChain: [ { options, source } ] } = await collector.fromVirtual({ extends: `${kind}/.babelrc` }, fixture('bad-rc', 'source.js'))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-rc', kind, '.babelrc'))
   }
