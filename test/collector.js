@@ -9,12 +9,12 @@ import collector from '../lib/collector'
 import fixture from './helpers/fixture'
 
 const compare = async (t, resolveChains, expected) => {
-  const actual = (await resolveChains()).withoutEnv
+  const actual = (await resolveChains()).defaultChain
   t.true(isMatch(actual, expected))
 }
 
 const compareEnv = async (t, resolveChains, env, expected) => {
-  const actual = (await resolveChains()).byEnv.get(env)
+  const actual = (await resolveChains()).envChains.get(env)
   t.true(isMatch(actual, expected))
 }
 
@@ -336,9 +336,9 @@ test('with virtual options, provides babelrcDir', async t => {
 
 test('chains can be iterated over', async t => {
   const chains = await collector.fromDirectory(fixture('complex-env'))
-  const [withoutEnv, foo] = chains
-  t.is(withoutEnv, chains.withoutEnv)
-  t.is(foo, chains.byEnv.get('foo'))
+  const [defaultChain, foo] = chains
+  t.is(defaultChain, chains.defaultChain)
+  t.is(foo, chains.envChains.get('foo'))
 })
 
 test('a cache can be used for file access', async t => {

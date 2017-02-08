@@ -4,19 +4,14 @@ import test from 'ava'
 
 import codegen from '../lib/codegen'
 import collector from '../lib/collector'
-import reduceOptions from '../lib/reduceOptions'
-import resolvePluginsAndPresets from '../lib/resolvePluginsAndPresets'
+import reduceChains from '../lib/reduceChains'
 
 const source = path.join(__dirname, 'fixtures', 'empty', 'source.js')
 
 test('stringifies using JSON unless chain is marked as JSON5', async t => {
   const json5 = false
   const chains = await collector.fromVirtual({}, source, null, json5)
-  const pluginsAndPresets = resolvePluginsAndPresets(chains)
-  const code = codegen({
-    withoutEnv: reduceOptions(chains.withoutEnv, pluginsAndPresets),
-    byEnv: new Map()
-  })
+  const code = codegen(reduceChains(chains))
 
   t.true(code.includes(`const defaultOptions = envName => {
   return {
@@ -28,11 +23,7 @@ test('stringifies using JSON unless chain is marked as JSON5', async t => {
 test('stringifies using JSON5 if chain is marked as such', async t => {
   const json5 = true
   const chains = await collector.fromVirtual({}, source, null, json5)
-  const pluginsAndPresets = resolvePluginsAndPresets(chains)
-  const code = codegen({
-    withoutEnv: reduceOptions(chains.withoutEnv, pluginsAndPresets),
-    byEnv: new Map()
-  })
+  const code = codegen(reduceChains(chains))
 
   t.true(code.includes(`const defaultOptions = envName => {
   return {
@@ -50,11 +41,7 @@ test('generates a nicely indented module', async t => {
   const chains = await collector.fromVirtual({
     extends: path.join(__dirname, 'fixtures', 'compare', 'extended-by-babelrc.json5')
   }, source, true)
-  const pluginsAndPresets = resolvePluginsAndPresets(chains)
-  const code = codegen({
-    withoutEnv: reduceOptions(chains.withoutEnv, pluginsAndPresets),
-    byEnv: new Map([['foo', reduceOptions(chains.byEnv.get('foo'), pluginsAndPresets)]])
-  })
+  const code = codegen(reduceChains(chains))
 
   t.is(code, `"use strict"
 
