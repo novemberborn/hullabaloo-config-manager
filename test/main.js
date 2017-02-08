@@ -97,6 +97,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   })
 
   env.BABEL_ENV = 'foo'
+  const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
@@ -155,7 +156,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
             env: {
               foo: {
                 plugins: [
-                  [`${dir}/node_modules/plugin/index.js`,
+                  [
+                    envPluginIndex,
                     {
                       label: 'plugin@babelrc.foo'
                     }
@@ -192,6 +194,7 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
     fixture('compare', '.babelrc'),
     fixture('compare', 'extended-by-babelrc.json5'),
     fixture('compare', 'extended-by-virtual.json5'),
+    fixture('compare', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'package.json')
   ]) {
     t.true(cache.files.has(file))
@@ -203,6 +206,7 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
 
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
+  const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
@@ -343,7 +347,8 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
             env: {
               foo: {
                 plugins: [
-                  [`${dir}/node_modules/plugin/index.js`,
+                  [
+                    envPluginIndex,
                     {
                       label: 'plugin@babelrc.foo'
                     }
@@ -473,7 +478,10 @@ test('fromVirtual() works without cache', t => {
 
 test('prepareCache()', t => {
   const cache = prepareCache()
-  t.deepEqual(Object.keys(cache), ['files', 'pluginsAndPresets'])
+  t.deepEqual(Object.keys(cache), ['dependencyHashes', 'fileExistence', 'files', 'pluginsAndPresets', 'sourceHashes'])
+  t.true(cache.dependencyHashes instanceof Map)
+  t.true(cache.fileExistence instanceof Map)
   t.true(cache.files instanceof Map)
   t.true(cache.pluginsAndPresets instanceof Map)
+  t.true(cache.sourceHashes instanceof Map)
 })

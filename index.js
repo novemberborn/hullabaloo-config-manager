@@ -3,6 +3,7 @@
 const collector = require('./lib/collector')
 const currentEnv = require('./lib/currentEnv')
 const ResolvedConfig = require('./lib/ResolvedConfig')
+const Verifier = require('./lib/Verifier')
 
 exports.currentEnv = currentEnv
 
@@ -22,8 +23,13 @@ exports.fromVirtual = fromVirtual
 
 function prepareCache () {
   return {
+    dependencyHashes: new Map(),
+    fileExistence: new Map(),
     files: new Map(),
-    pluginsAndPresets: new Map()
+    pluginsAndPresets: new Map(),
+    sourceHashes: new Map()
   }
 }
 exports.prepareCache = prepareCache
+
+exports.Verifier = Verifier
