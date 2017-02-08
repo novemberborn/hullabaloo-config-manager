@@ -9,7 +9,7 @@
   env: {
     foo: {
       plugins: [
-        ['plugin', {label: 'plugin@babelrc.foo'}]
+        ['env-plugin', {label: 'plugin@babelrc.foo'}]
       ],
       presets: [
         ['preset', {label: 'preset@babelrc.foo'}]
