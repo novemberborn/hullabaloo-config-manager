@@ -10,7 +10,8 @@ import resolveFrom from 'resolve-from'
 import td from 'testdouble'
 import uniqueTempDir from 'unique-temp-dir'
 
-import { fromDirectory, prepareCache, Verifier } from '../'
+import { fromDirectory, prepareCache } from '../'
+import Verifier from '../lib/Verifier'
 
 import fixture from './helpers/fixture'
 

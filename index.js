@@ -32,4 +32,7 @@ function prepareCache () {
 }
 exports.prepareCache = prepareCache
 
-exports.Verifier = Verifier
+function restoreVerifier (buffer) {
+  return Verifier.fromBuffer(buffer)
+}
+exports.restoreVerifier = restoreVerifier
