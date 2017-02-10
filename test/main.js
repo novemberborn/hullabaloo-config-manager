@@ -1,9 +1,10 @@
 import path from 'path'
 
 import test from 'ava'
+import md5Hex from 'md5-hex'
 import proxyquire from 'proxyquire'
 
-import { fromDirectory, fromVirtual, prepareCache, restoreVerifier } from '../'
+import { createConfig, fromConfig, fromDirectory, prepareCache, restoreVerifier } from '../'
 import Verifier from '../lib/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
@@ -17,6 +18,97 @@ function mockCurrentEnv (env = {}) {
     })
   }).currentEnv
 }
+
+test('createConfig() allows dir to be specified separately from source', async t => {
+  const dir = fixture('compare')
+  const result = await fromConfig(createConfig({
+    options: {
+      babelrc: false,
+      plugins: ['plugin']
+    },
+    source: 'foo',
+    dir
+  }))
+  const configModule = runGeneratedCode(result.generateModule())
+
+  const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
+  t.deepEqual(configModule.getOptions(), {
+    babelrc: false,
+    plugins: [pluginIndex]
+  })
+})
+
+test('createConfig() can take a fixed hash for the options', async t => {
+  const result = await fromConfig(createConfig({
+    options: {
+      babelrc: false
+    },
+    source: 'foo',
+    hash: 'hash of foo'
+  }))
+
+  const verifier = await result.createVerifier()
+  t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
+    dependencies: md5Hex([]),
+    sources: md5Hex(['hash of foo'])
+  })
+})
+
+test('createConfig() copies options to prevent modification of original input', async t => {
+  const options = {
+    env: {
+      foo: {
+        env: {
+          bar: {}
+        }
+      }
+    }
+  }
+
+  await fromConfig(createConfig({
+    options,
+    source: fixture()
+  }))
+  t.deepEqual(options, {
+    env: {
+      foo: {
+        env: {
+          bar: {}
+        }
+      }
+    }
+  })
+})
+
+test('createConfig() throws if options are not provided', t => {
+  const err = t.throws(() => createConfig(), TypeError)
+  t.is(err.message, "Expected 'options' and 'source' options")
+})
+
+test('createConfig() throws if \'options\' option is not provided', t => {
+  const err = t.throws(() => createConfig({ source: 'foo' }), TypeError)
+  t.is(err.message, "Expected 'options' and 'source' options")
+})
+
+test('createConfig() throws if \'source\' option is not provided', t => {
+  const err = t.throws(() => createConfig({ options: {} }), TypeError)
+  t.is(err.message, "Expected 'options' and 'source' options")
+})
+
+test('createConfig() throws if \'options\' option is null', t => {
+  const err = t.throws(() => createConfig({ options: null, source: 'foo' }), TypeError)
+  t.is(err.message, "Expected 'options' and 'source' options")
+})
+
+test('createConfig() throws if \'options\' option is an array', t => {
+  const err = t.throws(() => createConfig({ options: [], source: 'foo' }), TypeError)
+  t.is(err.message, "'options' must be an actual object")
+})
+
+test('createConfig() throws if \'options\' option is not an object', t => {
+  const err = t.throws(() => createConfig({ options: 'str', source: 'foo' }), TypeError)
+  t.is(err.message, "'options' must be an actual object")
+})
 
 test('currentEnv() returns BABEL_ENV, if set', t => {
   const currentEnv = mockCurrentEnv({
@@ -185,11 +277,14 @@ test('fromDirectory() works without cache', t => {
   t.notThrows(fromDirectory(fixture('compare')))
 })
 
-test('fromVirtual() resolves options, dependencies, uses cache, and can generate code', async t => {
+test('fromConfig() resolves options, dependencies, uses cache, and can generate code', async t => {
   const dir = fixture('compare')
   const cache = prepareCache()
   const source = fixture('compare', 'virtual.json')
-  const result = await fromVirtual(require(source), source, {cache}) // eslint-disable-line import/no-dynamic-require
+  const result = await fromConfig(createConfig({
+    options: require(source), // eslint-disable-line import/no-dynamic-require
+    source
+  }), { cache })
 
   for (const file of [
     fixture('compare', '.babelrc'),
@@ -472,9 +567,12 @@ test('fromVirtual() resolves options, dependencies, uses cache, and can generate
   })
 })
 
-test('fromVirtual() works without cache', t => {
+test('fromConfig() works without cache', t => {
   const source = fixture('compare', 'virtual.json')
-  t.notThrows(fromVirtual(require(source), source)) // eslint-disable-line import/no-dynamic-require
+  t.notThrows(fromConfig(createConfig({
+    options: require(source), // eslint-disable-line import/no-dynamic-require
+    source
+  })))
 })
 
 test('prepareCache()', t => {

@@ -1,11 +1,40 @@
 'use strict'
 
+const path = require('path')
+
+const cloneDeep = require('lodash.clonedeep')
+
 const collector = require('./lib/collector')
 const currentEnv = require('./lib/currentEnv')
 const ResolvedConfig = require('./lib/ResolvedConfig')
 const Verifier = require('./lib/Verifier')
 
+function createConfig (options) {
+  if (!options || !options.options || !options.source) {
+    throw new TypeError("Expected 'options' and 'source' options")
+  }
+  if (typeof options.options !== 'object' || Array.isArray(options.options)) {
+    throw new TypeError("'options' must be an actual object")
+  }
+
+  const source = options.source
+  const dir = options.dir || path.dirname(source)
+  const hash = options.hash || null
+  const json5 = options.json5 !== false
+  const babelOptions = cloneDeep(options.options)
+
+  return new collector.Config(dir, null, hash, json5, babelOptions, source)
+}
+exports.createConfig = createConfig
+
 exports.currentEnv = currentEnv
+
+function fromConfig (baseConfig, options) {
+  options = options || {}
+  return collector.fromConfig(baseConfig, options.cache)
+    .then(chains => chains && new ResolvedConfig(chains, options.cache))
+}
+exports.fromConfig = fromConfig
 
 function fromDirectory (dir, options) {
   options = options || {}
@@ -13,13 +42,6 @@ function fromDirectory (dir, options) {
     .then(chains => chains && new ResolvedConfig(chains, options.cache))
 }
 exports.fromDirectory = fromDirectory
-
-function fromVirtual (babelOptions, source, options) {
-  options = options || {}
-  return collector.fromVirtual(babelOptions, source, options.cache, options.json5)
-    .then(chains => chains && new ResolvedConfig(chains, options.cache))
-}
-exports.fromVirtual = fromVirtual
 
 function prepareCache () {
   return {
