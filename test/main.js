@@ -3,7 +3,8 @@ import path from 'path'
 import test from 'ava'
 import proxyquire from 'proxyquire'
 
-import { fromDirectory, fromVirtual, prepareCache } from '../'
+import { fromDirectory, fromVirtual, prepareCache, restoreVerifier } from '../'
+import Verifier from '../lib/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
 
@@ -484,4 +485,11 @@ test('prepareCache()', t => {
   t.true(cache.files instanceof Map)
   t.true(cache.pluginsAndPresets instanceof Map)
   t.true(cache.sourceHashes instanceof Map)
+})
+
+test('restoreVerifier()', t => {
+  const verifier = new Verifier(__dirname, new Set(), [], [])
+  const buffer = verifier.toBuffer()
+
+  t.deepEqual(restoreVerifier(buffer), verifier)
 })
