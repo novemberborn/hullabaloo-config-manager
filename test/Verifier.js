@@ -10,7 +10,7 @@ import resolveFrom from 'resolve-from'
 import td from 'testdouble'
 import uniqueTempDir from 'unique-temp-dir'
 
-import { fromDirectory, prepareCache } from '../'
+import { createConfig, fromConfig, fromDirectory, prepareCache } from '../'
 import Verifier from '../lib/Verifier'
 
 import fixture from './helpers/fixture'
@@ -78,7 +78,10 @@ test('cache is used when creating verifier', async t => {
   const env = {}
   const main = requireWithCurrentEnv(env)
   const cache = main.prepareCache()
-  const result = await main.fromVirtual(require(source), source, {cache}) // eslint-disable-line import/no-dynamic-require
+  const result = await main.fromConfig(main.createConfig({
+    options: require(source), // eslint-disable-line import/no-dynamic-require
+    source
+  }), {cache})
 
   await result.createVerifier()
   for (const dependency of [
@@ -104,7 +107,10 @@ test('cacheKeysForCurrentEnv()', async t => {
   const env = {}
   const main = requireWithCurrentEnv(env)
   const cache = main.prepareCache()
-  const result = await main.fromVirtual(require(source), source, {cache}) // eslint-disable-line import/no-dynamic-require
+  const result = await main.fromConfig(main.createConfig({
+    options: require(source), // eslint-disable-line import/no-dynamic-require
+    source
+  }), {cache})
   const verifier = await result.createVerifier()
 
   t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
@@ -239,6 +245,56 @@ test('verifyCurrentEnv() behavior without .babelrc file', async t => {
   t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
 })
 
+test('verifyCurrentEnv() behavior if .babelrc sources do not need to be consulted at all', async t => {
+  const dir = path.join(tmpDir, 'no-babelrc')
+  fse.copySync(fixture('verifier', 'babelrc'), dir)
+
+  const config = createConfig({
+    options: {
+      babelrc: false
+    },
+    source: 'source',
+    hash: 'hash of source'
+  })
+  const fixedHashes = {
+    sources: new Map([['source', 'hash of source']])
+  }
+  const verifier = await (await fromConfig(config)).createVerifier()
+  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+
+  t.deepEqual(await verifier.verifyCurrentEnv(fixedHashes), {
+    sourcesChanged: false,
+    dependenciesChanged: false,
+    cacheKeys,
+    verifier
+  })
+
+  fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
+  t.false((await verifier.verifyCurrentEnv(fixedHashes)).sourcesChanged)
+})
+
+test('verifyCurrentEnv() can take fixed source hashes', async t => {
+  const dir = path.join(tmpDir, 'fixed-source-hashes')
+  fse.copySync(fixture('verifier', 'pkg'), dir)
+
+  const result = await fromConfig(createConfig({
+    options: { babelrc: true },
+    source: 'foo',
+    hash: 'hash of foo'
+  }), { cache: prepareCache() })
+  const verifier = await result.createVerifier()
+
+  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+
+  const fixedHashes = { sources: new Map([['foo', 'hash of foo']]) }
+  t.deepEqual(await verifier.verifyCurrentEnv(fixedHashes), {
+    sourcesChanged: false,
+    dependenciesChanged: false,
+    cacheKeys,
+    verifier
+  })
+})
+
 test('verifyCurrentEnv() can use cache', async t => {
   const dir = path.join(tmpDir, 'use-cache')
   fse.copySync(fixture('verifier', 'pkg'), dir)
@@ -246,7 +302,7 @@ test('verifyCurrentEnv() can use cache', async t => {
 
   const cache = prepareCache()
   const verifier = await (await fromDirectory(dir)).createVerifier()
-  await verifier.verifyCurrentEnv(cache)
+  await verifier.verifyCurrentEnv(null, cache)
 
   t.deepEqual(Array.from(cache.dependencyHashes.keys()), [
     plugin
@@ -270,7 +326,7 @@ test('verifyCurrentEnv() can use cache', async t => {
     fs: { access }
   }).fromBuffer(buffer)
 
-  stubbedVerifier.verifyCurrentEnv(cache)
+  stubbedVerifier.verifyCurrentEnv(null, cache)
   t.true(td.explain(access).callCount === 0)
 })
 

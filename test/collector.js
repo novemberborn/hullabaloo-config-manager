@@ -5,6 +5,7 @@ import isMatch from 'lodash.ismatch'
 import proxyquire from 'proxyquire'
 import td from 'testdouble'
 
+import { createConfig } from '../'
 import collector from '../lib/collector'
 import fixture from './helpers/fixture'
 
@@ -101,11 +102,23 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
-  const babelrc = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('babelrc', 'source.js'))
-  const pkg = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('pkg', 'source.js'), null, false)
-  const disabled = () => collector.fromVirtual({ babelrc: false, plugins: ['virtual'] }, fixture('babelrc', 'source.js'))
+  const babelrc = () => collector.fromConfig(createConfig({
+    json5: true,
+    options: { plugins: ['created-config'] },
+    source: fixture('babelrc', 'source.js')
+  }))
+  const pkg = () => collector.fromConfig(createConfig({
+    json5: false,
+    options: { plugins: ['created-config'] },
+    source: fixture('pkg', 'source.js')
+  }))
+  const disabled = () => collector.fromConfig(createConfig({
+    json5: false,
+    options: { babelrc: false, plugins: ['created-config'] },
+    source: fixture('babelrc', 'source.js')
+  }))
 
-  test('virtual with .babelrc', compare, babelrc, new Set([
+  test('fromConfig() with .babelrc', compare, babelrc, new Set([
     {
       options: {
         plugins: ['babelrc']
@@ -115,14 +128,14 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     {
       options: {
-        plugins: ['virtual']
+        plugins: ['created-config']
       },
       source: fixture('babelrc', 'source.js'),
       json5: true
     }
   ]))
 
-  test('virtual with package.json', compare, pkg, new Set([
+  test('fromConfig() with package.json', compare, pkg, new Set([
     {
       options: {
         plugins: ['pkg']
@@ -132,18 +145,18 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     {
       options: {
-        plugins: ['virtual']
+        plugins: ['created-config']
       },
       source: fixture('pkg', 'source.js'),
       json5: false
     }
   ]))
 
-  test('virtual with babelrc lookup disabled', compare, disabled, new Set([
+  test('fromConfig() with babelrc lookup disabled', compare, disabled, new Set([
     {
       options: {
         babelrc: false,
-        plugins: ['virtual']
+        plugins: ['created-config']
       },
       source: fixture('babelrc', 'source.js'),
       json5: true
@@ -193,11 +206,14 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
-  const emptyVirtual = () => collector.fromVirtual({ plugins: ['virtual'] }, fixture('empty', 'source.js'))
-  test('virtual from empty directory', compare, emptyVirtual, new Set([
+  const empty = () => collector.fromConfig(createConfig({
+    options: { plugins: ['created-config'] },
+    source: fixture('empty', 'source.js')
+  }))
+  test('fromConfig() from empty directory', compare, empty, new Set([
     {
       options: {
-        plugins: ['virtual']
+        plugins: ['created-config']
       },
       source: fixture('empty', 'source.js')
     }
@@ -205,8 +221,11 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
-  const virtualSource = fixture('repeats', 'virtual.json')
-  const repeats = () => collector.fromVirtual(require(virtualSource), virtualSource) // eslint-disable-line import/no-dynamic-require
+  const source = fixture('repeats', 'virtual.json')
+  const repeats = () => collector.fromConfig(createConfig({
+    options: require(source), // eslint-disable-line import/no-dynamic-require
+    source
+  }))
   test('includes configs but once', compare, repeats, new Set([
     {
       options: {
@@ -216,9 +235,9 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     {
       options: {
-        plugins: ['virtual']
+        plugins: ['created-config']
       },
-      source: virtualSource
+      source
     }
   ]))
 }
@@ -272,10 +291,13 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
-  const absExtends = () => collector.fromVirtual({
-    babelrc: false,
-    extends: fixture('babelrc', '.babelrc')
-  }, __filename)
+  const absExtends = () => collector.fromConfig(createConfig({
+    options: {
+      babelrc: false,
+      extends: fixture('babelrc', '.babelrc')
+    },
+    source: __filename
+  }))
   test('accepts absolute paths in extends clauses', compare, absExtends, new Set([
     {
       options: {
@@ -296,42 +318,130 @@ test('returns null when resolving a directory without configs', async t => {
   t.true((await collector.fromDirectory(fixture('empty'))) === null)
 })
 
-test('does not modify virtual options', async t => {
-  const options = {
-    env: {
-      foo: {
-        env: {
-          bar: {}
-        }
-      }
-    }
-  }
-
-  await collector.fromVirtual(options, fixture())
-  t.deepEqual(options, {
-    env: {
-      foo: {
-        env: {
-          bar: {}
-        }
-      }
-    }
-  })
-})
-
 test('if options were found from directory, provides babelrcDir', async t => {
   const { babelrcDir } = await collector.fromDirectory(fixture('babelrc'))
   t.is(babelrcDir, fixture('babelrc'))
 })
 
-test('with virtual options, provides babelrcDir', async t => {
+test('with a created config, provides babelrcDir', async t => {
   const options = {
-    plugins: ['virtual']
+    plugins: ['created-config']
   }
   const source = fixture('babelrc', 'source.js')
 
-  const { babelrcDir } = await collector.fromVirtual(options, source)
+  const { babelrcDir } = await collector.fromConfig(createConfig({
+    options,
+    source
+  }))
   t.is(babelrcDir, fixture('babelrc'))
+})
+
+{
+  const base = createConfig({
+    options: {
+      babelrc: false,
+      plugins: ['base']
+    },
+    source: 'base'
+  })
+  const middle = createConfig({
+    options: {
+      babelrc: false,
+      plugins: ['middle']
+    },
+    source: 'middle'
+  })
+  const root = createConfig({
+    options: {
+      babelrc: false,
+      plugins: ['root']
+    },
+    source: 'root'
+  })
+  base.extend(middle)
+  middle.extend(root)
+
+  test('created configs can extend other created configs', compare, () => collector.fromConfig(base), new Set([
+    {
+      options: {
+        plugins: ['root']
+      },
+      source: 'root'
+    },
+    {
+      options: {
+        plugins: ['middle']
+      },
+      source: 'middle'
+    },
+    {
+      options: {
+        plugins: ['base']
+      },
+      source: 'base'
+    }
+  ]))
+}
+
+test('created configs cannot have an extend option and extend another created config', t => {
+  const base = createConfig({
+    options: {
+      extends: './foo'
+    },
+    source: 'base'
+  })
+  const other = createConfig({
+    options: {},
+    source: 'other'
+  })
+
+  const err = t.throws(() => base.extend(other), TypeError)
+  t.is(err.message, 'Cannot extend config: there is an extends clause in the current options: ./foo')
+})
+
+test('created configs cannot extend more than one created config', t => {
+  const base = createConfig({
+    options: {},
+    source: 'base'
+  })
+  const other = createConfig({
+    options: {},
+    source: 'other'
+  })
+  const yetAnother = createConfig({
+    options: {},
+    source: 'yetAnother'
+  })
+  base.extend(other)
+
+  const err = t.throws(() => base.extend(yetAnother), TypeError)
+  t.is(err.message, 'Cannot extend config: already extended')
+})
+
+test('only one created config can have its babelrc option enabled', t => {
+  const base = createConfig({
+    options: {
+      babelrc: false // explicitly disable
+    },
+    source: 'base'
+  })
+  const other = createConfig({
+    options: {
+      babelrc: true // explicitly enable
+    },
+    source: 'other'
+  })
+  const yetAnother = createConfig({
+    options: {
+      // implicitly enabled
+    },
+    source: 'yetAnother'
+  })
+  base.extend(other)
+  other.extend(yetAnother)
+
+  const err = t.throws(() => collector.fromConfig(base), TypeError)
+  t.is(err.message, 'yetAnother: Cannot resolve babelrc option, already resolved by other')
 })
 
 test('chains can be iterated over', async t => {

@@ -2,6 +2,7 @@ import path from 'path'
 
 import test from 'ava'
 
+import { createConfig } from '../'
 import codegen from '../lib/codegen'
 import collector from '../lib/collector'
 import reduceChains from '../lib/reduceChains'
@@ -10,7 +11,11 @@ const source = path.join(__dirname, 'fixtures', 'empty', 'source.js')
 
 test('stringifies using JSON5 unless chain is marked otherwise', async t => {
   const json5 = false
-  const chains = await collector.fromVirtual({}, source, null, json5)
+  const chains = await collector.fromConfig(createConfig({
+    json5,
+    options: {},
+    source
+  }))
   const code = codegen(reduceChains(chains))
 
   t.true(code.includes(`const defaultOptions = envName => {
@@ -21,8 +26,10 @@ test('stringifies using JSON5 unless chain is marked otherwise', async t => {
 })
 
 test('by default stringifies using JSON5', async t => {
-  const json5 = true
-  const chains = await collector.fromVirtual({}, source, null, json5)
+  const chains = await collector.fromConfig(createConfig({
+    options: {},
+    source
+  }))
   const code = codegen(reduceChains(chains))
 
   t.true(code.includes(`const defaultOptions = envName => {
@@ -38,9 +45,13 @@ test('generates a nicely indented module', async t => {
     return JSON.stringify(p)
   }
 
-  const chains = await collector.fromVirtual({
-    extends: path.join(__dirname, 'fixtures', 'compare', 'extended-by-babelrc.json5')
-  }, source, true)
+  const chains = await collector.fromConfig(createConfig({
+    json5: true,
+    options: {
+      extends: path.join(__dirname, 'fixtures', 'compare', 'extended-by-babelrc.json5')
+    },
+    source
+  }))
   const code = codegen(reduceChains(chains))
 
   t.is(code, `"use strict"

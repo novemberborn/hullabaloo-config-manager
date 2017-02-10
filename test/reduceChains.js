@@ -26,12 +26,14 @@ const reduces = (t, defaultChain, envChains, expected) => {
   const {
     dependencies,
     envNames,
+    fixedSourceHashes,
     sources,
     unflattenedDefaultOptions,
     unflattenedEnvOptions
   } = reduceChains(chains)
 
   if ('dependencies' in expected) t.deepEqual(dependencies, expected.dependencies)
+  if ('fixedSourceHashes' in expected) t.deepEqual(fixedSourceHashes, expected.fixedSourceHashes)
   if ('envNames' in expected) t.deepEqual(envNames, expected.envNames)
   if ('sources' in expected) t.deepEqual(sources, expected.sources)
   if ('unflattenedDefaultOptions' in expected) t.deepEqual(unflattenedDefaultOptions, expected.unflattenedDefaultOptions)
@@ -175,4 +177,22 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
   }
 ], new Map(), {
   json5: true
+})
+
+test('collects fixed source hashes', reduces, [
+  {
+    options: {},
+    source: 'foo',
+    hash: 'hash of foo'
+  },
+  {
+    options: {},
+    source: 'bar',
+    hash: 'hash of bar'
+  }
+], new Map(), {
+  fixedSourceHashes: new Map([
+    ['foo', 'hash of foo'],
+    ['bar', 'hash of bar']
+  ])
 })

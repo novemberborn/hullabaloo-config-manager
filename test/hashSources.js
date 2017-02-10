@@ -41,13 +41,29 @@ test('source may contain a dot-prop path', async t => {
   t.deepEqual(hashed, [md5Hex('{"virtual":true}')])
 })
 
+test('can use a map of fixed hashes', async t => {
+  const hashed = await hashSources([
+    { source: fixture('pkg', 'package.json') },
+    { source: 'foo' },
+    { source: 'bar' }
+  ], new Map([
+    ['foo', 'hash of foo'],
+    ['bar', 'hash of bar']
+  ]))
+  t.deepEqual(hashed, [
+    md5Hex('{"plugins":["pkg"]}'),
+    'hash of foo',
+    'hash of bar'
+  ])
+})
+
 test('can use a cache of computed hashes', async t => {
   const source = fixture('precomputed')
   const cache = {
     sourceHashes: new Map([[source, Promise.resolve('hash')]])
   }
 
-  const hashed = await hashSources([{source}], cache)
+  const hashed = await hashSources([{source}], null, cache)
   t.deepEqual(hashed, ['hash'])
 })
 
@@ -57,7 +73,7 @@ test('caches new hashes', async t => {
     sourceHashes: new Map()
   }
 
-  const hashed = await hashSources([{source}], cache)
+  const hashed = await hashSources([{source}], null, cache)
   const fromCache = await cache.sourceHashes.get(source)
   t.true(hashed[0] === fromCache)
 })
@@ -69,7 +85,7 @@ test('can use a cache for file access', async t => {
     files: new Map([[source, Promise.resolve(contents)]])
   }
 
-  const hashed = await hashSources([{source}], cache)
+  const hashed = await hashSources([{source}], null, cache)
   t.deepEqual(hashed, [md5Hex(contents)])
 })
 
