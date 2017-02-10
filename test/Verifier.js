@@ -158,8 +158,8 @@ test('can be serialized and deserialized', t => {
   ]
   const verifier = new Verifier(babelrcDir, envNames, dependencies, sources)
 
-  const blob = verifier.toBlob()
-  const deserialized = Verifier.fromBlob(blob)
+  const buffer = verifier.toBuffer()
+  const deserialized = Verifier.fromBuffer(buffer)
   t.is(deserialized.babelrcDir, babelrcDir)
   t.deepEqual(deserialized.envNames, envNames)
   t.deepEqual(deserialized.dependencies, dependencies)
@@ -264,10 +264,10 @@ test('verifyCurrentEnv() can use cache', async t => {
   ])
 
   const access = td.func()
-  const blob = verifier.toBlob()
+  const buffer = verifier.toBuffer()
   const stubbedVerifier = proxyquire('../lib/Verifier', {
     fs: { access }
-  }).fromBlob(blob)
+  }).fromBuffer(buffer)
 
   stubbedVerifier.verifyCurrentEnv(cache)
   t.true(td.explain(access).callCount === 0)
@@ -305,10 +305,10 @@ test('verifyCurrentEnv() behavior with unexpected errors', async t => {
   const access = td.func()
   td.when(access(path.join(dir, '.babelrc'))).thenCallback(expected)
 
-  const blob = (await (await fromDirectory(dir)).createVerifier()).toBlob()
+  const buffer = (await (await fromDirectory(dir)).createVerifier()).toBuffer()
   const verifier = proxyquire('../lib/Verifier', {
     fs: { access }
-  }).fromBlob(blob)
+  }).fromBuffer(buffer)
 
   const actual = await t.throws(verifier.verifyCurrentEnv())
   t.is(actual, expected)
