@@ -8,7 +8,7 @@ import reduceChains from '../lib/reduceChains'
 
 const source = path.join(__dirname, 'fixtures', 'empty', 'source.js')
 
-test('stringifies using JSON unless chain is marked as JSON5', async t => {
+test('stringifies using JSON5 unless chain is marked otherwise', async t => {
   const json5 = false
   const chains = await collector.fromVirtual({}, source, null, json5)
   const code = codegen(reduceChains(chains))
@@ -20,7 +20,7 @@ test('stringifies using JSON unless chain is marked as JSON5', async t => {
 }`))
 })
 
-test('stringifies using JSON5 if chain is marked as such', async t => {
+test('by default stringifies using JSON5', async t => {
   const json5 = true
   const chains = await collector.fromVirtual({}, source, null, json5)
   const code = codegen(reduceChains(chains))
