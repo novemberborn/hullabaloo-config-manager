@@ -414,7 +414,7 @@ test('created configs cannot extend more than one created config', t => {
   })
   base.extend(other)
 
-  const err = t.throws(() => base.extend(yetAnother), TypeError)
+  const err = t.throws(() => base.extend(yetAnother), Error)
   t.is(err.message, 'Cannot extend config: already extended')
 })
 
