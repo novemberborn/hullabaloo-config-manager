@@ -32,7 +32,7 @@ exports.currentEnv = currentEnv
 function fromConfig (baseConfig, options) {
   options = options || {}
   return collector.fromConfig(baseConfig, options.cache)
-    .then(chains => chains && new ResolvedConfig(chains, options.cache))
+    .then(chains => new ResolvedConfig(chains, options.cache))
 }
 exports.fromConfig = fromConfig
 
