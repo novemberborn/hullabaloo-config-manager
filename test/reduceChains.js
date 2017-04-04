@@ -16,7 +16,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
   const chains = {
     defaultChain,
     envChains,
-    *[Symbol.iterator] () {
+    * [Symbol.iterator] () {
       yield defaultChain
       for (const chain of envChains.values()) {
         yield chain

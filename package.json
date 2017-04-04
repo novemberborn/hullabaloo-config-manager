@@ -8,7 +8,7 @@
     "lib"
   ],
   "engines": {
-    "node": ">=4"
+    "node": ">=4.5"
   },
   "scripts": {
     "lint": "as-i-preach",
@@ -45,7 +45,7 @@
     "resolve-from": "^2.0.0"
   },
   "devDependencies": {
-    "@novemberborn/as-i-preach": "^7.0.0",
+    "@novemberborn/as-i-preach": "^8.0.0",
     "ava": "^0.18.1",
     "babel-core": "^6.22.1",
     "coveralls": "^2.11.16",

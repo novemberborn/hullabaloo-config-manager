@@ -76,7 +76,7 @@ test('caches new hashes', async t => {
 
 test('can use a cache for file access', async t => {
   const filename = fixture('cached-access')
-  const contents = new Buffer('cached')
+  const contents = Buffer.from('cached')
   const cache = {
     files: new Map([[filename, Promise.resolve(contents)]])
   }
