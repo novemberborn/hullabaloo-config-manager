@@ -273,8 +273,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   })
 })
 
-test('fromDirectory() works without cache', t => {
-  t.notThrows(fromDirectory(fixture('compare')))
+test('fromDirectory() works without cache', async t => {
+  await t.notThrows(fromDirectory(fixture('compare')))
 })
 
 test('fromConfig() resolves options, dependencies, uses cache, and can generate code', async t => {
@@ -567,9 +567,9 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   })
 })
 
-test('fromConfig() works without cache', t => {
+test('fromConfig() works without cache', async t => {
   const source = fixture('compare', 'virtual.json')
-  t.notThrows(fromConfig(createConfig({
+  await t.notThrows(fromConfig(createConfig({
     options: require(source), // eslint-disable-line import/no-dynamic-require
     source
   })))
