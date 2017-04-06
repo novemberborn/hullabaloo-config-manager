@@ -35,6 +35,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
   if ('dependencies' in expected) t.deepEqual(dependencies, expected.dependencies)
   if ('fixedSourceHashes' in expected) t.deepEqual(fixedSourceHashes, expected.fixedSourceHashes)
   if ('envNames' in expected) t.deepEqual(envNames, expected.envNames)
+  if ('json5' in expected) t.is(unflattenedDefaultOptions.json5, expected.json5)
   if ('sources' in expected) t.deepEqual(sources, expected.sources)
   if ('unflattenedDefaultOptions' in expected) t.deepEqual(unflattenedDefaultOptions, expected.unflattenedDefaultOptions)
   if ('unflattenedEnvOptions' in expected) t.deepEqual(unflattenedEnvOptions, expected.unflattenedEnvOptions)
@@ -131,7 +132,7 @@ test('babelrc option is always false', reduces, [
     }
   }
 ], new Map(), {
-  unflattenedOptions: [{
+  unflattenedDefaultOptions: [{
     babelrc: false
   }]
 })
@@ -144,7 +145,7 @@ test('removes non-array plugins and presets values', reduces, [
     }
   }
 ], new Map(), {
-  unflattenedOptions: [
+  unflattenedDefaultOptions: [
     {
       babelrc: false,
       plugins: [],
