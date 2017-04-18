@@ -22,6 +22,7 @@ test.before(t => {
   for (const pkg of [
     fixture('compare', 'node_modules', 'env-plugin', 'package.json'),
     fixture('compare', 'node_modules', 'plugin', 'package.json'),
+    fixture('compare', 'node_modules', 'plugin-default-opts', 'package.json'),
     fixture('compare', 'node_modules', 'preset', 'package.json')
   ]) {
     promises.push(
@@ -86,6 +87,7 @@ test('cache is used when creating verifier', async t => {
   await result.createVerifier()
   for (const dependency of [
     fixture('compare', 'node_modules', 'plugin', 'index.js'),
+    fixture('compare', 'node_modules', 'plugin-default-opts', 'index.js'),
     fixture('compare', 'node_modules', 'preset', 'index.js')
   ]) {
     t.true(cache.dependencyHashes.has(dependency))
@@ -130,6 +132,7 @@ test('cacheKeysForCurrentEnv()', async t => {
   t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
     dependencies: md5Hex([
       hashes[fixture('compare', 'node_modules', 'env-plugin', 'package.json')],
+      hashes[fixture('compare', 'node_modules', 'plugin-default-opts', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'preset', 'package.json')]
     ]),
