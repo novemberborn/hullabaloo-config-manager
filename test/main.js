@@ -191,6 +191,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
 
   env.BABEL_ENV = 'foo'
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
+  const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
   t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
@@ -254,7 +255,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
                     {
                       label: 'plugin@babelrc.foo'
                     }
-                  ]
+                  ],
+                  pluginDefaultOptsIndex
                 ],
                 presets: [
                   [
@@ -303,6 +305,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
+  const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
   t.deepEqual(configModule.getOptions(), {
     plugins: [
       [
@@ -448,7 +451,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                     {
                       label: 'plugin@babelrc.foo'
                     }
-                  ]
+                  ],
+                  pluginDefaultOptsIndex
                 ],
                 presets: [
                   [

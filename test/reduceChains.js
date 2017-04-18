@@ -54,7 +54,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
     options: {
       parserOpts: { foo: 1 },
       plugins: [['./baz', {}], 'foo'],
-      presets: ['qux'],
+      presets: [['qux']],
       sourceMaps: false
     },
     source: '2'
