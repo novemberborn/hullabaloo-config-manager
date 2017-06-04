@@ -9,20 +9,22 @@ import pkgDirMock from './helpers/pkgDirMock'
 {
   const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
-    'resolve-from' (dir, ref) {
-      if (path.isAbsolute(ref)) {
-        return ref
-      }
+    'resolve-from': {
+      silent (dir, ref) {
+        if (path.isAbsolute(ref)) {
+          return ref
+        }
 
-      if (ref.startsWith('./') || ref.startsWith('../')) {
-        return path.resolve(dir, ref + '.js')
-      }
+        if (ref.startsWith('./') || ref.startsWith('../')) {
+          return path.resolve(dir, ref + '.js')
+        }
 
-      if (ref.includes('exact') && ref.replace(/^@.+?\//, '').startsWith('babel-')) {
-        return null
-      }
+        if (ref.includes('exact') && ref.replace(/^@.+?\//, '').startsWith('babel-')) {
+          return null
+        }
 
-      return path.resolve('node_modules', ref, 'index.js')
+        return path.resolve('node_modules', ref, 'index.js')
+      }
     }
   })
 
@@ -153,8 +155,8 @@ import pkgDirMock from './helpers/pkgDirMock'
 }
 
 test('caches results', t => {
-  const resolveFrom = td.function()
-  td.when(resolveFrom(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
+  const resolveFrom = td.object({silent () {}})
+  td.when(resolveFrom.silent(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
 
   const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
@@ -199,7 +201,7 @@ test('caches results', t => {
     ]
   ])
 
-  const { callCount, calls } = td.explain(resolveFrom)
+  const { callCount, calls } = td.explain(resolveFrom.silent)
   t.is(callCount, 5)
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-foo'])
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-preset-foo'])
@@ -209,8 +211,8 @@ test('caches results', t => {
 })
 
 test('caches can be shared', t => {
-  const resolveFrom = td.function()
-  td.when(resolveFrom(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
+  const resolveFrom = td.object({silent () {}})
+  td.when(resolveFrom.silent(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
 
   const sharedCache = {
     pluginsAndPresets: new Map()
@@ -261,7 +263,7 @@ test('caches can be shared', t => {
     ], sharedCache)
   })
 
-  const { callCount, calls } = td.explain(resolveFrom)
+  const { callCount, calls } = td.explain(resolveFrom.silent)
   t.is(callCount, 5)
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-foo'])
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-preset-foo'])
@@ -271,8 +273,8 @@ test('caches can be shared', t => {
 })
 
 {
-  const resolveFrom = td.function()
-  td.when(resolveFrom(td.matchers.anything(), td.matchers.anything())).thenReturn(null)
+  const resolveFrom = td.object({silent () {}})
+  td.when(resolveFrom.silent(td.matchers.anything(), td.matchers.anything())).thenReturn(null)
 
   const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,

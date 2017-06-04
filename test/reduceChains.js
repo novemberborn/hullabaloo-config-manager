@@ -6,8 +6,10 @@ import pkgDirMock from './helpers/pkgDirMock'
 const reduceChains = proxyquire('../lib/reduceChains', {
   './resolvePluginsAndPresets': proxyquire('../lib/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
-    'resolve-from' (dir, ref) {
-      return ref
+    'resolve-from': {
+      silent (dir, ref) {
+        return ref
+      }
     }
   })
 })
