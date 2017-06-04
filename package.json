@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/novemberborn/hullabaloo-config-manager#readme",
   "dependencies": {
+    "codecov": "^2.2.0",
     "dot-prop": "^4.1.0",
     "es6-error": "^4.0.2",
     "graceful-fs": "^4.1.11",
@@ -48,7 +49,6 @@
     "@novemberborn/as-i-preach": "^9.0.0",
     "ava": "^0.19.0",
     "babel-core": "^6.22.1",
-    "coveralls": "^2.11.16",
     "fs-extra": "^3.0.0",
     "lodash.ismatch": "^4.4.0",
     "nyc": "^11.0.0",
