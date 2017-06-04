@@ -2,6 +2,7 @@ import fs from 'fs'
 
 import test from 'ava'
 import md5Hex from 'md5-hex'
+import { Buffer as SafeBuffer } from 'safe-buffer'
 
 import hashSources from '../lib/hashSources'
 import fixture from './helpers/fixture'
@@ -80,7 +81,7 @@ test('caches new hashes', async t => {
 
 test('can use a cache for file access', async t => {
   const source = fixture('cached-access')
-  const contents = Buffer.from('cached')
+  const contents = SafeBuffer.from('cached')
   const cache = {
     files: new Map([[source, Promise.resolve(contents)]])
   }
