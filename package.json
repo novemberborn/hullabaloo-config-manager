@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^9.0.0",
-    "ava": "^0.19.1",
+    "ava": "^0.20.0",
     "babel-core": "^6.22.1",
     "codecov": "^2.2.0",
     "fs-extra": "^3.0.0",
