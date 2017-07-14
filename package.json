@@ -50,7 +50,7 @@
     "ava": "^0.19.1",
     "babel-core": "^6.22.1",
     "codecov": "^2.2.0",
-    "fs-extra": "^3.0.0",
+    "fs-extra": "^4.0.0",
     "lodash.ismatch": "^4.4.0",
     "nyc": "^11.0.0",
     "proxyquire": "^1.7.11",
