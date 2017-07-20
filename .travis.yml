@@ -1,14 +1,28 @@
 language: node_js
 node_js:
-  - '8'
-  - '6'
-  - '4'
+  - 8
+  - 6
+  - 4
   - '4.4.7'
+env:
+  - FRESH_DEPS=false
+  - FRESH_DEPS=true
+matrix:
+  exclude:
+    - node_js: 6
+      env: FRESH_DEPS=true
+    - node_js: 4
+      env: FRESH_DEPS=true
+    - node_js: '4.4.7'
+      env: FRESH_DEPS=true
 cache:
   directories:
     - $HOME/.npm
-    - node_modules
-before_install: 'npm install --global npm'
-before_script: 'npm prune'
-script: 'npm run coverage'
-after_script: './node_modules/.bin/codecov --file=./coverage/lcov.info'
+before_install:
+  - npm install --global npm@^5.3.0
+  - npm --version
+  - if [[ ${FRESH_DEPS} == "true" ]]; then rm package-lock.json; fi
+install:
+  - if [[ ${FRESH_DEPS} == "true" ]]; then npm install --prefer-online; else npm install --prefer-offline; fi
+script: npm run coverage
+after_success: npx codecov --file=./coverage/lcov.info
