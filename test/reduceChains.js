@@ -90,7 +90,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
       { default: false, envs: new Set(['foo']), source: '3' },
       { default: false, envs: new Set(['foo']), source: '4' }
     ],
-    unflattenedDefaultOptions: [
+    unflattenedDefaultOptions: Object.assign([
       {
         babelrc: false,
         parserOpts: { foo: 1 },
@@ -102,9 +102,9 @@ const reduces = (t, defaultChain, envChains, expected) => {
         plugins: [['./baz', {}], 'babel-plugin-foo'],
         presets: ['babel-preset-qux']
       }
-    ],
+    ], {json5: false}),
     unflattenedEnvOptions: new Map([
-      ['foo', [
+      ['foo', Object.assign([
         {
           babelrc: false,
           parserOpts: { foo: 2 },
@@ -122,7 +122,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
         {
           plugins: ['babel-plugin-quux']
         }
-      ]]
+      ], {json5: false})]
     ])
   })
 }
@@ -134,9 +134,9 @@ test('babelrc option is always false', reduces, [
     }
   }
 ], new Map(), {
-  unflattenedDefaultOptions: [{
+  unflattenedDefaultOptions: Object.assign([{
     babelrc: false
-  }]
+  }], {json5: false})
 })
 
 test('removes non-array plugins and presets values', reduces, [
@@ -147,13 +147,13 @@ test('removes non-array plugins and presets values', reduces, [
     }
   }
 ], new Map(), {
-  unflattenedDefaultOptions: [
+  unflattenedDefaultOptions: Object.assign([
     {
       babelrc: false,
       plugins: [],
       presets: []
     }
-  ]
+  ], {json5: false})
 })
 
 test('json5 remains false if none of the configs were parsed using JSON5', reduces, [
