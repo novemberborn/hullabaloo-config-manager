@@ -1,7 +1,7 @@
 import test from 'ava'
 
 import {createConfig} from '..'
-import collector from '../lib/collector'
+import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
 {

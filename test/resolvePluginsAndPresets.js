@@ -7,7 +7,7 @@ import td from 'testdouble'
 import pkgDirMock from './helpers/pkgDirMock'
 
 {
-  const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
+  const {default: resolvePluginsAndPresets} = proxyquire('../build/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
     'resolve-from': {
       silent (dir, ref) {
@@ -158,7 +158,7 @@ test('caches results', t => {
   const resolveFrom = td.object({silent () {}})
   td.when(resolveFrom.silent(td.matchers.anything(), td.matchers.anything())).thenReturn('/stubbed/path')
 
-  const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
+  const {default: resolvePluginsAndPresets} = proxyquire('../build/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
     'resolve-from': resolveFrom
   })
@@ -218,7 +218,7 @@ test('caches can be shared', t => {
     pluginsAndPresets: new Map()
   }
 
-  const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
+  const {default: resolvePluginsAndPresets} = proxyquire('../build/resolvePluginsAndPresets', {
     'resolve-from': resolveFrom
   })
 
@@ -276,7 +276,7 @@ test('caches can be shared', t => {
   const resolveFrom = td.object({silent () {}})
   td.when(resolveFrom.silent(td.matchers.anything(), td.matchers.anything())).thenReturn(null)
 
-  const resolvePluginsAndPresets = proxyquire('../lib/resolvePluginsAndPresets', {
+  const {default: resolvePluginsAndPresets} = proxyquire('../build/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
     'resolve-from': resolveFrom
   })

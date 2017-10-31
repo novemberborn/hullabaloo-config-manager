@@ -28,5 +28,6 @@ install:
   - ps: if ($env:configuration -eq "FreshDeps") { Remove-Item package-lock.json }
   - if %configuration% == FreshDeps (npm install --prefer-online)
   - if %configuration% == LockedDeps (npm install --prefer-online)
+  - npm run build
 test_script:
   - npm test

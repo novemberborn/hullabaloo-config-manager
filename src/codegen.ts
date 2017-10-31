@@ -1,45 +1,45 @@
-'use strict'
+import indentString = require('indent-string')
+import json5 = require('json5')
 
-const indentString = require('indent-string')
-const stringifyJson5 = require('json5').stringify
+import {CompressedOptions} from './reduceChains'
+import ResolvedConfig from './ResolvedConfig'
 
-function stringify (json5, value) {
-  return json5
-    ? stringifyJson5(value, null, 2)
+function stringify (asJson5: boolean, value: object): string {
+  return asJson5
+    ? json5.stringify(value, null, 2)
     : JSON.stringify(value, null, 2)
 }
 
-function generateFactory (unflattened, envName) {
+function trimLeft (str: string): string {
+  return str.replace(/^\s+/, '')
+}
+
+function generateFactory (unflattened: CompressedOptions, envName?: string): string {
   const code = [`${envName ? '()' : 'envName'} => {`]
 
   if (envName) {
-    const flattenedOptions = unflattened.reduceRight((prev, options) => {
-      options.env = {
-        [envName]: prev
-      }
-      return options
-    })
+    const flattenedOptions = unflattened.reduceRight((prev, options) => ({...options, env: {[envName]: prev}}))
     code.push(indentString(`return ${stringify(unflattened.json5, flattenedOptions)}`, 2))
   } else {
-    const optionsCode = unflattened.reduceRight((prev, options, index) => {
+    const optionsCode = unflattened.reduceRight((prev: string | null, options, index) => {
       const str = stringify(unflattened.json5, options)
       if (!prev) return str
 
       // reduceOptions ensures no options object is ever empty.
       const lines = str.split('\n')
       lines[lines.length - 2] += ','
-      lines[lines.length - 1] = indentString(`env: {\n  [envName]: ${indentString(prev, 2).trimLeft()}\n}`, 2)
+      lines[lines.length - 1] = indentString(`env: {\n  [envName]: ${trimLeft(indentString(prev, 2))}\n}`, 2)
       return lines.join('\n') + '\n}'
-    }, null)
+    }, null)!
 
-    code.push(indentString(`return ${optionsCode.trimLeft()}`, 2))
+    code.push(indentString(`return ${trimLeft(optionsCode)}`, 2))
   }
 
   code.push('}')
   return code.join('\n')
 }
 
-function codegen (resolvedConfig) {
+export default function codegen (resolvedConfig: ResolvedConfig): string {
   const code = [`"use strict"
 
 const process = require("process")\n`]
@@ -47,7 +47,7 @@ const process = require("process")\n`]
 
   code.push(`const envOptions = Object.create(null)\n`)
   for (const envName of resolvedConfig.envNames) {
-    const unflattened = resolvedConfig.unflattenedEnvOptions.get(envName)
+    const unflattened = resolvedConfig.unflattenedEnvOptions.get(envName)!
     code.push(`envOptions[${JSON.stringify(envName)}] = ${generateFactory(unflattened, envName)}\n`)
   }
 
@@ -60,5 +60,3 @@ const process = require("process")\n`]
 
   return code.join('\n')
 }
-
-module.exports = codegen

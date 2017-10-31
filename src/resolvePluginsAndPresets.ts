@@ -1,13 +1,23 @@
-'use strict'
+import path = require('path')
 
-const path = require('path')
+import pkgDir = require('pkg-dir')
+import resolveFrom = require('resolve-from')
 
-const ExtendableError = require('es6-error')
-const pkgDir = require('pkg-dir')
-const resolveFrom = require('resolve-from')
+import Cache, {PluginsAndPresetsMap, PluginsAndPresetsMapValue} from './Cache'
+import {Chains, Config} from './collector'
 
-class ResolveError extends ExtendableError {
-  constructor (source, kind, ref) {
+export const enum Kind {
+  PLUGIN = 'plugin',
+  PRESET = 'preset'
+}
+
+class ResolveError extends Error {
+  public readonly source: string
+  public readonly ref: string
+  public readonly isPlugin: boolean
+  public readonly isPreset: boolean
+
+  public constructor (source: string, kind: Kind, ref: string) {
     super(`${source}: Couldn't find ${kind} ${JSON.stringify(ref)} relative to directory`)
     this.name = 'ResolveError'
     this.source = source
@@ -17,57 +27,67 @@ class ResolveError extends ExtendableError {
   }
 }
 
-function normalize (arr) {
+function normalize (arr: any): string[] {
   if (!Array.isArray(arr)) return []
 
   return arr.map(item => Array.isArray(item) ? item[0] : item)
 }
 
-function isFilePath (ref) {
+function isFilePath (ref: string): boolean {
   return path.isAbsolute(ref) || ref.startsWith('./') || ref.startsWith('../')
 }
 
-function resolveName (name, fromDir, cache) {
-  if (cache.has(name)) return cache.get(name)
+function resolveName (name: string, fromDir: string, cache: PluginsAndPresetsMapValue): string | null {
+  if (cache.has(name)) return cache.get(name)!
 
   const filename = resolveFrom.silent(fromDir, name)
   cache.set(name, filename)
   return filename
 }
 
-function resolvePackage (filename, fromFile) {
+function resolvePackage (filename: string, fromFile: boolean): string | null {
   if (fromFile) return null
 
   return pkgDir.sync(filename)
 }
 
-function resolvePluginsAndPresets (chains, sharedCache) {
-  const dirCaches = (sharedCache && sharedCache.pluginsAndPresets) || new Map()
-  const getCache = dir => {
-    if (dirCaches.has(dir)) return dirCaches.get(dir)
+export interface Entry {
+  filename: string
+  fromPackage: string | null
+}
 
-    const cache = new Map()
+export type ResolutionMap = Map<Config, {
+  plugins: Map<string, Entry>
+  presets: Map<string, Entry>
+}>
+
+export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: Cache): ResolutionMap {
+  const dirCaches: PluginsAndPresetsMap = (sharedCache && sharedCache.pluginsAndPresets) || new Map()
+  const getCache = (dir: string): PluginsAndPresetsMapValue => {
+    if (dirCaches.has(dir)) return dirCaches.get(dir)!
+
+    const cache: PluginsAndPresetsMapValue = new Map()
     dirCaches.set(dir, cache)
     return cache
   }
 
-  const byConfig = new Map()
+  const byConfig: ResolutionMap = new Map()
   for (const chain of chains) {
     for (const config of chain) {
       if (byConfig.has(config)) continue
 
-      const plugins = new Map()
-      const presets = new Map()
+      const plugins = new Map<string, Entry>()
+      const presets = new Map<string, Entry>()
       byConfig.set(config, {plugins, presets})
 
       const fromDir = config.dir
       const cache = getCache(fromDir)
-      const resolve = (kind, ref) => {
-        const possibleNames = []
+      const resolve = (kind: Kind, ref: string) => {
+        const possibleNames: {fromFile: boolean; name: string}[] = [] // eslint-disable-line typescript/member-delimiter-style
         if (isFilePath(ref)) {
           possibleNames.push({fromFile: true, name: ref})
         } else {
-          if (kind === 'plugin') {
+          if (kind === Kind.PLUGIN) {
             // Expand possible plugin names, see
             // https://github.com/babel/babel/blob/510e93b2bd434f05c816fe6639137b35bac267ed/packages/babel-core/src/helpers/get-possible-plugin-names.js
 
@@ -82,8 +102,8 @@ function resolvePluginsAndPresets (chains, sharedCache) {
             // Expand possible preset names, see
             // https://github.com/babel/babel/blob/510e93b2bd434f05c816fe6639137b35bac267ed/packages/babel-core/src/helpers/get-possible-preset-names.js
 
-            if (ref.startsWith('@')) {
-              const matches = /^(@.+?)\/([^/]+)(.*)/.exec(ref)
+            const matches = /^(@.+?)\/([^/]+)(.*)/.exec(ref)
+            if (matches !== null) {
               const scope = matches[1]
               const partialName = matches[2]
               const remainder = matches[3]
@@ -99,7 +119,7 @@ function resolvePluginsAndPresets (chains, sharedCache) {
           possibleNames.push({fromFile: false, name: ref})
         }
 
-        let entry = null
+        let entry: Entry | null = null
         for (const possibility of possibleNames) {
           const filename = resolveName(possibility.name, fromDir, cache)
           if (filename) {
@@ -112,7 +132,7 @@ function resolvePluginsAndPresets (chains, sharedCache) {
           throw new ResolveError(config.source, kind, ref)
         }
 
-        if (kind === 'plugin') {
+        if (kind === Kind.PLUGIN) {
           plugins.set(ref, entry)
         } else {
           presets.set(ref, entry)
@@ -120,15 +140,13 @@ function resolvePluginsAndPresets (chains, sharedCache) {
       }
 
       for (const ref of normalize(config.options.plugins)) {
-        resolve('plugin', ref)
+        resolve(Kind.PLUGIN, ref)
       }
       for (const ref of normalize(config.options.presets)) {
-        resolve('preset', ref)
+        resolve(Kind.PRESET, ref)
       }
     }
   }
 
   return byConfig
 }
-
-module.exports = resolvePluginsAndPresets

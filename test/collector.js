@@ -6,7 +6,7 @@ import proxyquire from 'proxyquire'
 import td from 'testdouble'
 
 import {createConfig} from '..'
-import collector from '../lib/collector'
+import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
 const compare = async (t, resolveChains, expected) => {
@@ -418,7 +418,7 @@ test('created configs cannot extend more than one created config', t => {
   t.is(err.message, 'Cannot extend config: already extended')
 })
 
-test('only one created config can have its babelrc option enabled', t => {
+test('only one created config can have its babelrc option enabled', async t => {
   const base = createConfig({
     options: {
       babelrc: false // explicitly disable
@@ -440,7 +440,7 @@ test('only one created config can have its babelrc option enabled', t => {
   base.extend(other)
   other.extend(yetAnother)
 
-  const err = t.throws(() => collector.fromConfig(base), TypeError)
+  const err = await t.throws(collector.fromConfig(base), TypeError)
   t.is(err.message, 'yetAnother: Cannot resolve babelrc option, already resolved by other')
 })
 
@@ -467,8 +467,8 @@ test('a cache can be used for file access', async t => {
     td.when(readFile(fixture('complex-env', 'package.json'))).thenCallback(err)
   }
 
-  const {fromDirectory} = proxyquire('../lib/collector', {
-    './readSafe': proxyquire('../lib/readSafe', {
+  const {fromDirectory} = proxyquire('../build/collector', {
+    './readSafe': proxyquire('../build/readSafe', {
       'graceful-fs': {readFile}
     })
   })

@@ -2,15 +2,22 @@
   "name": "hullabaloo-config-manager",
   "version": "1.1.1",
   "description": "Manages complex Babel config chains, avoiding duplicated work and enabling effective caching",
-  "main": "index.js",
+  "main": "build/main.js",
   "files": [
-    "index.js",
-    "lib"
+    "build",
+    "src",
+    "typings",
+    "tsconfig.json"
   ],
+  "typings": "./build/main.d.ts",
   "engines": {
     "node": ">=4"
   },
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "prebuild": "rimraf ./build",
+    "prepack": "npm install && npm run build",
     "lint": "as-i-preach",
     "test": "ava",
     "posttest": "as-i-preach",
@@ -31,7 +38,6 @@
   "homepage": "https://github.com/novemberborn/hullabaloo-config-manager#readme",
   "dependencies": {
     "dot-prop": "^4.2.0",
-    "es6-error": "^4.0.2",
     "graceful-fs": "^4.1.11",
     "indent-string": "^3.2.0",
     "json5": "^0.5.1",
@@ -47,6 +53,15 @@
   },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^11.0.0",
+    "@types/dot-prop": "^4.1.0",
+    "@types/graceful-fs": "^4.1.1",
+    "@types/indent-string": "^3.0.0",
+    "@types/json5": "0.0.29",
+    "@types/lodash.clonedeep": "^4.5.3",
+    "@types/lodash.clonedeepwith": "^4.5.3",
+    "@types/lodash.isequal": "^4.5.2",
+    "@types/lodash.merge": "^4.6.3",
+    "@types/node": "^8.0.47",
     "ava": "^0.23.0",
     "babel-core": "^6.26.0",
     "codecov": "^3.0.0",
@@ -55,7 +70,13 @@
     "nyc": "^11.2.1",
     "proxyquire": "^1.7.11",
     "testdouble": "^3.2.6",
+    "typescript": "^2.6.1",
     "unique-temp-dir": "^1.0.0"
+  },
+  "ava": {
+    "source": [
+      "build/**/*.js"
+    ]
   },
   "nyc": {
     "reporter": [

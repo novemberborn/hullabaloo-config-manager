@@ -4,7 +4,7 @@ import test from 'ava'
 import md5Hex from 'md5-hex'
 import {Buffer as SafeBuffer} from 'safe-buffer'
 
-import hashSources from '../lib/hashSources'
+import hashSources from '../build/hashSources'
 import fixture from './helpers/fixture'
 
 test('hashes file contents', async t => {

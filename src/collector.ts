@@ -1,15 +1,15 @@
-'use strict'
+import path = require('path')
 
-const path = require('path')
+import json5 = require('json5')
 
-const parseJson5 = require('json5').parse
+import BabelOptions, {ReducedOptions} from './BabelOptions'
+import Cache from './Cache'
+import {ExtendsError, InvalidFileError, NoSourceFileError, ParseError} from './errors'
+import readSafe from './readSafe'
 
-const errors = require('./errors')
-const readSafe = require('./readSafe')
-
-function makeValid (source, options) {
+function makeValid (source: string, options: any): BabelOptions {
   // Arrays are never valid options.
-  if (Array.isArray(options)) throw new errors.InvalidFileError(source)
+  if (Array.isArray(options)) throw new InvalidFileError(source)
 
   // Force options to be an object. Babel itself ignores falsy values when
   // resolving config chains. Here such files still need to be included
@@ -19,31 +19,50 @@ function makeValid (source, options) {
   return options
 }
 
-function parseFile (source, buffer) {
+function parseFile (source: string, buffer: Buffer): BabelOptions {
   let options
   try {
-    options = parseJson5(buffer.toString('utf8'))
+    options = json5.parse(buffer.toString('utf8'))
   } catch (err) {
-    throw new errors.ParseError(source, err)
+    throw new ParseError(source, err)
   }
 
   return makeValid(source, options)
 }
 
-function parsePackage (source, buffer) {
+function parsePackage (source: string, buffer: Buffer): BabelOptions {
   let options
   try {
     const pkg = JSON.parse(buffer.toString('utf8'))
     options = pkg && pkg.babel
   } catch (err) {
-    throw new errors.ParseError(source, err)
+    throw new ParseError(source, err)
   }
 
   return makeValid(source, options)
 }
 
-class Config {
-  constructor (dir, env, hash, json5, options, source) {
+export class Config {
+  public readonly dir: string
+  public readonly env: string | null
+  public readonly hash: string | null
+  public readonly json5: boolean
+  public readonly options: BabelOptions
+  public readonly source: string
+
+  public babelrcPointer: number | null
+  public extends: Config | null
+  public extendsPointer: number | null
+  public readonly envPointers: Map<string, number>
+
+  public constructor (
+    dir: string,
+    env: string | null,
+    hash: string | null,
+    json5: boolean,
+    options: BabelOptions,
+    source: string
+  ) {
     this.dir = dir
     this.env = env
     this.hash = hash
@@ -57,11 +76,11 @@ class Config {
     this.extendsPointer = null
   }
 
-  copyWithEnv (env, options) {
-    return new this.constructor(this.dir, env, this.hash, this.json5, options, this.source)
+  public copyWithEnv (env: string, options: BabelOptions): Config {
+    return new Config(this.dir, env, this.hash, this.json5, options, this.source)
   }
 
-  extend (config) {
+  public extend (config: Config): void {
     const clause = this.takeExtends()
     if (clause) {
       throw new TypeError(`Cannot extend config: there is an extends clause in the current options: ${clause}`)
@@ -73,73 +92,68 @@ class Config {
     this.extends = config
   }
 
-  takeEnvs () {
+  public takeEnvs (): Map<string, ReducedOptions> {
     const env = this.options.env
     delete this.options.env
 
-    return env
-      ? new Map(
-        Object.keys(env)
-          .filter(Boolean)
-          .map(name => [name, env[name]]))
-      : new Map()
+    if (!env) return new Map()
+
+    const take = Object.keys(env).filter(Boolean).map<[string, ReducedOptions]>(name => [name, env[name]])
+    return new Map(take)
   }
 
-  takeExtends () {
+  public takeExtends (): string | undefined {
     const clause = this.options.extends
     delete this.options.extends
     return clause
   }
 }
-exports.Config = Config
 
-function resolveDirectory (dir, cache) {
+async function resolveDirectory (dir: string, cache?: Cache): Promise<Config | null> {
   const fileSource = path.join(dir, '.babelrc')
   const packageSource = path.join(dir, 'package.json')
 
-  const fromFile = readSafe(fileSource, cache)
-    .then(contents => contents && {
-      json5: true,
-      parse () { return parseFile(fileSource, contents) },
-      source: fileSource
-    })
+  // Attempt to read file and package concurrently. Neither may exist, and
+  // that's OK.
+  const fromFile = readSafe(fileSource, cache).then(contents => contents && {
+    json5: true,
+    parse () { return parseFile(fileSource, contents) },
+    source: fileSource
+  })
 
-  const fromPackage = readSafe(packageSource, cache)
-    .then(contents => contents && {
-      json5: false,
-      parse () { return parsePackage(packageSource, contents) },
-      source: packageSource
-    })
+  const fromPackage = readSafe(packageSource, cache).then(contents => contents && {
+    json5: false,
+    parse () { return parsePackage(packageSource, contents) },
+    source: packageSource
+  })
 
-  return fromFile
-    .then(fileResult => fileResult || fromPackage)
-    .then(result => {
-      // .babelrc or package.json files may not exist, and that's OK.
-      if (!result) return null
-
-      return new Config(dir, null, null, result.json5, result.parse(), result.source)
-    })
+  const result = (await fromFile) || (await fromPackage)
+  return result && new Config(dir, null, null, result.json5, result.parse(), result.source)
 }
 
-function resolveFile (source, cache) {
-  return readSafe(source, cache)
-    .then(contents => {
-      // The file *must* exist. Causes a proper error to be propagated to
-      // where "extends" directives are resolved.
-      if (!contents) throw new errors.NoSourceFileError(source)
+async function resolveFile (source: string, cache?: Cache): Promise<Config> {
+  const contents = await readSafe(source, cache)
+  // The file *must* exist. Causes a proper error to be propagated to
+  // where "extends" directives are resolved.
+  if (!contents) throw new NoSourceFileError(source)
 
-      return new Config(path.dirname(source), null, null, true, parseFile(source, contents), source)
-    })
+  return new Config(path.dirname(source), null, null, true, parseFile(source, contents), source)
 }
 
-class Chains {
-  constructor (babelrcDir, defaultChain, envChains) {
+export type Chain = Set<Config>
+
+export class Chains {
+  public readonly babelrcDir?: string
+  public readonly defaultChain: Chain
+  public readonly envChains: Map<string, Chain>
+
+  public constructor (babelrcDir: string | undefined, defaultChain: Chain, envChains: Map<string, Chain>) {
     this.babelrcDir = babelrcDir
     this.defaultChain = defaultChain
     this.envChains = envChains
   }
 
-  * [Symbol.iterator] () {
+  public * [Symbol.iterator] () {
     yield this.defaultChain
     for (const chain of this.envChains.values()) {
       yield chain
@@ -148,22 +162,28 @@ class Chains {
 }
 
 class Collector {
-  constructor (cache) {
+  public readonly cache?: Cache
+
+  protected configs: Config[]
+  protected envNames: Set<string>
+  protected pointers: Map<string, number>
+
+  public constructor (cache?: Cache) {
     this.cache = cache
     this.configs = []
     this.envNames = new Set()
     this.pointers = new Map()
   }
 
-  get initialConfig () {
+  public get initialConfig (): Config {
     return this.configs[0]
   }
 
-  add (config) {
+  public async add (config: Config): Promise<number> {
     // Avoid adding duplicate configs. Note that configs that came from an
     // "env" directive share their source with their parent config.
     if (!config.env && this.pointers.has(config.source)) {
-      return Promise.resolve(this.pointers.get(config.source))
+      return this.pointers.get(config.source)!
     }
 
     const pointer = this.configs.push(config) - 1
@@ -173,33 +193,36 @@ class Collector {
 
     const envs = config.takeEnvs()
     const extendsClause = config.takeExtends()
+
+    // Collect promises so they can run concurrently and be awaited at the end
+    // of this function.
     const waitFor = []
 
     if (config.extends) {
-      const promise = this.add(config.extends)
-        .then(extendsPointer => (config.extendsPointer = extendsPointer))
+      const promise = this.add(config.extends).then(extendsPointer => {
+        config.extendsPointer = extendsPointer
+      })
       waitFor.push(promise)
     } else if (extendsClause) {
       const extendsSource = path.resolve(config.dir, extendsClause)
 
       if (this.pointers.has(extendsSource)) {
         // Point at existing config.
-        config.extendsPointer = this.pointers.get(extendsSource)
+        config.extendsPointer = this.pointers.get(extendsSource)!
       } else {
         // Different configs may concurrently resolve the same extends source.
         // While only one such resolution is added to the config list, this
         // does lead to extra file I/O and parsing. Optimizing this is not
         // currently considered worthwhile.
-        const promise = resolveFile(extendsSource, this.cache)
-          .then(parentConfig => this.add(parentConfig))
-          .then(extendsPointer => (config.extendsPointer = extendsPointer))
-          .catch(err => {
-            if (err.name === 'NoSourceFileError') {
-              throw new errors.ExtendsError(config.source, extendsClause, err)
-            }
+        const promise = resolveFile(extendsSource, this.cache).then(async parentConfig => {
+          config.extendsPointer = await this.add(parentConfig)
+        }).catch(err => {
+          if (err.name === 'NoSourceFileError') {
+            throw new ExtendsError(config.source, extendsClause, err)
+          }
 
-            throw err
-          })
+          throw err
+        })
 
         waitFor.push(promise)
       }
@@ -210,39 +233,39 @@ class Collector {
       const options = pair[1]
 
       this.envNames.add(name)
-      const promise = this.add(config.copyWithEnv(name, options))
-        .then(envPointer => config.envPointers.set(name, envPointer))
+      const promise = this.add(config.copyWithEnv(name, options)).then(envPointer => {
+        config.envPointers.set(name, envPointer)
+      })
       waitFor.push(promise)
     }
 
-    return Promise.all(waitFor)
-      .then(() => pointer)
+    await Promise.all(waitFor)
+    return pointer
   }
 
-  resolveChains (babelrcDir) {
+  public resolveChains (babelrcDir?: string): Chains | null {
     if (this.configs.length === 0) return null
 
     // Resolves a config chain, correctly ordering parent configs and recursing
     // through environmental configs, while avoiding cycles and repetitions.
-    const resolveChain = (from, envName) => {
-      const chain = new Set()
-      const knownParents = new Set()
+    const resolveChain = (from: Iterable<Config>, envName?: string): Chain => {
+      const chain: Chain = new Set()
+      const knownParents: Chain = new Set()
 
-      /* eslint-disable no-use-before-define */
-      const addWithEnv = config => {
+      const addWithEnv = (config: Config) => {
         // Avoid unnecessary work in case the `from` list contains configs that
         // have already been added through an environmental config's parent.
         if (chain.has(config)) return
         chain.add(config)
 
-        if (config.envPointers.has(envName)) {
-          const pointer = config.envPointers.get(envName)
+        if (config.envPointers.has(envName!)) {
+          const pointer = config.envPointers.get(envName!)!
           const envConfig = this.configs[pointer]
           addAfterParents(envConfig)
         }
       }
 
-      const addAfterParents = config => {
+      const addAfterParents = (config: Config) => {
         // Avoid cycles by ignoring those parents that are already being added.
         if (knownParents.has(config)) return
         knownParents.add(config)
@@ -262,7 +285,6 @@ class Collector {
           chain.add(config)
         }
       }
-      /* eslint-enable no-use-before-define */
 
       for (const config of from) {
         if (envName) {
@@ -282,7 +304,7 @@ class Collector {
 
     // For each environment, augment the default chain with environmental
     // configs.
-    const envChains = new Map(Array.from(this.envNames, name => {
+    const envChains = new Map(Array.from(this.envNames, (name): [string, Chain] => {
       return [name, resolveChain(defaultChain, name)]
     }))
 
@@ -290,9 +312,9 @@ class Collector {
   }
 }
 
-function fromConfig (baseConfig, cache) {
-  let babelrcConfig = null
-  for (let config = baseConfig; config; config = config.extends) {
+export async function fromConfig (baseConfig: Config, cache?: Cache): Promise<Chains> {
+  let babelrcConfig: Config | null = null
+  for (let config: Config | null = baseConfig; config; config = config.extends) {
     if (config.options.babelrc === false) continue
 
     if (babelrcConfig) {
@@ -303,30 +325,26 @@ function fromConfig (baseConfig, cache) {
   }
 
   const collector = new Collector(cache)
-  return Promise.all([
+  await Promise.all<any>([
     collector.add(baseConfig),
     // Resolve the directory concurrently. Assumes that in the common case,
     // the babelrcConfig doesn't extend from a .babelrc file while also leaving
     // the babelrc option enabled. Worst case the resolved config is discarded
     // as a duplicate.
-    babelrcConfig && resolveDirectory(babelrcConfig.dir, cache)
-      .then(parentConfig => {
-        if (!parentConfig) return
-
-        return collector.add(parentConfig)
-          .then(babelrcPointer => (babelrcConfig.babelrcPointer = babelrcPointer))
-      })
+    babelrcConfig && resolveDirectory(babelrcConfig.dir, cache).then(async parentConfig => {
+      if (parentConfig) {
+        babelrcConfig!.babelrcPointer = await collector.add(parentConfig)
+      }
+    })
   ])
-    .then(() => collector.resolveChains(babelrcConfig && babelrcConfig.dir))
+  return babelrcConfig ? collector.resolveChains(babelrcConfig.dir)! : collector.resolveChains()!
 }
-exports.fromConfig = fromConfig
 
-function fromDirectory (dir, cache) {
+export function fromDirectory (dir: string, cache?: Cache): Promise<Chains | null> {
   dir = path.resolve(dir)
 
   const collector = new Collector(cache)
   return resolveDirectory(dir, cache)
-    .then(config => config && collector.add(config))
+    .then<any>(config => config && collector.add(config))
     .then(() => collector.resolveChains(dir))
 }
-exports.fromDirectory = fromDirectory

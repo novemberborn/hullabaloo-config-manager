@@ -1,16 +1,16 @@
-'use strict'
+import path = require('path')
 
-const path = require('path')
+import dotProp = require('dot-prop')
+import md5Hex = require('md5-hex')
 
-const dotProp = require('dot-prop')
-const md5Hex = require('md5-hex')
+import Cache from './Cache'
+import {NoSourceFileError} from './errors'
+import readSafe from './readSafe'
+import {Source} from './reduceChains'
 
-const errors = require('./errors')
-const readSafe = require('./readSafe')
-
-function hashSource (source, cache) {
+function hashSource (source: string, cache?: Cache): Promise<string> {
   if (cache && cache.sourceHashes && cache.sourceHashes.has(source)) {
-    return cache.sourceHashes.get(source)
+    return cache.sourceHashes.get(source)!
   }
 
   const basename = path.basename(source)
@@ -24,7 +24,7 @@ function hashSource (source, cache) {
 
   const promise = readSafe(filepath, cache)
     .then(contents => {
-      if (!contents) throw new errors.NoSourceFileError(source)
+      if (!contents) throw new NoSourceFileError(source)
 
       if (!pkgAccessor) {
         return md5Hex(contents)
@@ -41,11 +41,11 @@ function hashSource (source, cache) {
   return promise
 }
 
-function hashSources (sources, fixedHashes, cache) {
+export default function hashSources (sources: Source[], fixedHashes?: Map<string, string>, cache?: Cache): Promise<string[]> {
   const promises = sources.map(item => {
-    if (fixedHashes && fixedHashes.has(item.source)) return fixedHashes.get(item.source)
-    return hashSource(item.source, cache)
+    return fixedHashes && fixedHashes.has(item.source)
+      ? fixedHashes.get(item.source)!
+      : hashSource(item.source, cache)
   })
   return Promise.all(promises)
 }
-module.exports = hashSources

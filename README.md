@@ -41,7 +41,7 @@ const configManager = require('hullabaloo-config-manager')
 Returns the current environment value, just like `babel-core` would determine
 it.
 
-### `fromDirectory(dir: string, options?: {cache: Cache}): Promise<null | ResolvedConfig>`
+### `fromDirectory(dir: string, options?: {cache: Cache}): Promise<ResolvedConfig | null>`
 
 Asynchronously resolves config chains from the `dir` directory. If no config can
 be found the promise is resolved with `null`. Otherwise it is resolved with the

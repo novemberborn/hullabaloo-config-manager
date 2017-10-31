@@ -3,8 +3,8 @@ import proxyquire from 'proxyquire'
 
 import pkgDirMock from './helpers/pkgDirMock'
 
-const reduceChains = proxyquire('../lib/reduceChains', {
-  './resolvePluginsAndPresets': proxyquire('../lib/resolvePluginsAndPresets', {
+const {default: reduceChains} = proxyquire('../build/reduceChains', {
+  './resolvePluginsAndPresets': proxyquire('../build/resolvePluginsAndPresets', {
     'pkg-dir': pkgDirMock,
     'resolve-from': {
       silent (dir, ref) {

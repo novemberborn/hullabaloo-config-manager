@@ -5,13 +5,13 @@ import md5Hex from 'md5-hex'
 import proxyquire from 'proxyquire'
 
 import {createConfig, fromConfig, fromDirectory, prepareCache, restoreVerifier} from '..'
-import Verifier from '../lib/Verifier'
+import Verifier from '../build/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
 
 function mockCurrentEnv (env = {}) {
-  return proxyquire('../', {
-    './lib/currentEnv': proxyquire('../lib/currentEnv', {
+  return proxyquire('..', {
+    './currentEnv': proxyquire('../build/currentEnv', {
       process: {
         env
       }

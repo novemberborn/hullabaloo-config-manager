@@ -1,13 +1,13 @@
-'use strict'
+import gfs = require('graceful-fs')
 
-const gfs = require('graceful-fs')
+import Cache from './Cache'
 
-function readSafe (source, cache) {
+export default function readSafe (source: string, cache?: Cache): Promise<Buffer | null> {
   if (cache && cache.files && cache.files.has(source)) {
-    return cache.files.get(source)
+    return cache.files.get(source)!
   }
 
-  const promise = new Promise((resolve, reject) => {
+  const promise = new Promise<Buffer | null>((resolve, reject) => {
     gfs.readFile(source, (err, contents) => {
       if (err) {
         if (err.code === 'ENOENT') {
@@ -26,4 +26,3 @@ function readSafe (source, cache) {
   }
   return promise
 }
-module.exports = readSafe

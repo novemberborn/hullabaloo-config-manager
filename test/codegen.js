@@ -3,9 +3,9 @@ import path from 'path'
 import test from 'ava'
 
 import {createConfig} from '..'
-import codegen from '../lib/codegen'
-import collector from '../lib/collector'
-import reduceChains from '../lib/reduceChains'
+import codegen from '../build/codegen'
+import * as collector from '../build/collector'
+import reduceChains from '../build/reduceChains'
 
 const source = path.join(__dirname, 'fixtures', 'empty', 'source.js')
 

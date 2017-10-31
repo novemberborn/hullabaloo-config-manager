@@ -11,7 +11,7 @@ import td from 'testdouble'
 import uniqueTempDir from 'unique-temp-dir'
 
 import {createConfig, fromConfig, fromDirectory, prepareCache} from '..'
-import Verifier from '../lib/Verifier'
+import Verifier from '../build/Verifier'
 
 import fixture from './helpers/fixture'
 
@@ -49,20 +49,20 @@ test.before(t => {
 })
 
 function requireWithCurrentEnv (env = {}) {
-  const currentEnv = proxyquire('../lib/currentEnv', {
+  const currentEnv = proxyquire('../build/currentEnv', {
     process: {
       env
     }
   })
 
-  const Verifier_ = proxyquire('../lib/Verifier', {
+  const Verifier_ = proxyquire('../build/Verifier', {
     './currentEnv': currentEnv
   })
 
-  return proxyquire('../', {
-    './lib/currentEnv': currentEnv,
-    './lib/Verifier': Verifier_,
-    './lib/ResolvedConfig': proxyquire('../lib/ResolvedConfig', {
+  return proxyquire('..', {
+    './currentEnv': currentEnv,
+    './Verifier': Verifier_,
+    './ResolvedConfig': proxyquire('../build/ResolvedConfig', {
       './Verifier': Verifier_
     })
   })
@@ -325,9 +325,9 @@ test('verifyCurrentEnv() can use cache', async t => {
 
   const access = td.func()
   const buffer = verifier.toBuffer()
-  const stubbedVerifier = proxyquire('../lib/Verifier', {
+  const stubbedVerifier = proxyquire('../build/Verifier', {
     fs: {access}
-  }).fromBuffer(buffer)
+  }).default.fromBuffer(buffer)
 
   stubbedVerifier.verifyCurrentEnv(null, cache)
   t.true(td.explain(access).callCount === 0)
@@ -366,9 +366,9 @@ test('verifyCurrentEnv() behavior with unexpected errors', async t => {
   td.when(access(path.join(dir, '.babelrc'))).thenCallback(expected)
 
   const buffer = (await (await fromDirectory(dir)).createVerifier()).toBuffer()
-  const verifier = proxyquire('../lib/Verifier', {
+  const verifier = proxyquire('../build/Verifier', {
     fs: {access}
-  }).fromBuffer(buffer)
+  }).default.fromBuffer(buffer)
 
   const actual = await t.throws(verifier.verifyCurrentEnv())
   t.is(actual, expected)

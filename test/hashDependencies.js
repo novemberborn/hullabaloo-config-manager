@@ -6,7 +6,7 @@ import md5Hex from 'md5-hex'
 import packageHash from 'package-hash'
 import {Buffer as SafeBuffer} from 'safe-buffer'
 
-import hashDependencies from '../lib/hashDependencies'
+import hashDependencies from '../build/hashDependencies'
 import fixture from './helpers/fixture'
 
 test('hashes packages', async t => {
