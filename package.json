@@ -47,14 +47,14 @@
   },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^10.1.0",
-    "ava": "^0.21.0",
-    "babel-core": "^6.25.0",
-    "codecov": "^2.2.0",
-    "fs-extra": "^4.0.0",
+    "ava": "^0.23.0",
+    "babel-core": "^6.26.0",
+    "codecov": "^3.0.0",
+    "fs-extra": "^4.0.2",
     "lodash.ismatch": "^4.4.0",
-    "nyc": "^11.0.3",
+    "nyc": "^11.2.1",
     "proxyquire": "^1.7.11",
-    "testdouble": "^3.2.2",
+    "testdouble": "^3.2.6",
     "unique-temp-dir": "^1.0.0"
   },
   "nyc": {
