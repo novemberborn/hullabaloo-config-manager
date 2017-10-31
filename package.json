@@ -30,10 +30,10 @@
   },
   "homepage": "https://github.com/novemberborn/hullabaloo-config-manager#readme",
   "dependencies": {
-    "dot-prop": "^4.1.0",
+    "dot-prop": "^4.2.0",
     "es6-error": "^4.0.2",
     "graceful-fs": "^4.1.11",
-    "indent-string": "^3.1.0",
+    "indent-string": "^3.2.0",
     "json5": "^0.5.1",
     "lodash.clonedeep": "^4.5.0",
     "lodash.clonedeepwith": "^4.5.0",
@@ -42,7 +42,7 @@
     "md5-hex": "^2.0.0",
     "package-hash": "^2.0.0",
     "pkg-dir": "^2.0.0",
-    "resolve-from": "^3.0.0",
+    "resolve-from": "^4.0.0",
     "safe-buffer": "^5.1.1"
   },
   "devDependencies": {
