@@ -201,7 +201,7 @@ test('caches results', t => {
     ]
   ])
 
-  const { callCount, calls } = td.explain(resolveFrom.silent)
+  const {callCount, calls} = td.explain(resolveFrom.silent)
   t.is(callCount, 5)
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-foo'])
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-preset-foo'])
@@ -263,7 +263,7 @@ test('caches can be shared', t => {
     ], sharedCache)
   })
 
-  const { callCount, calls } = td.explain(resolveFrom.silent)
+  const {callCount, calls} = td.explain(resolveFrom.silent)
   t.is(callCount, 5)
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-plugin-foo'])
   t.deepEqual(calls.shift().args, [path.resolve('bar'), 'babel-preset-foo'])

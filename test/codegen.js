@@ -2,7 +2,7 @@ import path from 'path'
 
 import test from 'ava'
 
-import { createConfig } from '../'
+import {createConfig} from '..'
 import codegen from '../lib/codegen'
 import collector from '../lib/collector'
 import reduceChains from '../lib/reduceChains'

@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { runInNewContext } from 'vm'
+import {runInNewContext} from 'vm'
 
 export default function runGeneratedCode (code, env = process.env) {
   const configModule = {}
@@ -8,7 +8,7 @@ export default function runGeneratedCode (code, env = process.env) {
     require (mid) {
       assert(mid === 'process')
 
-      return { env }
+      return {env}
     }
   })
 

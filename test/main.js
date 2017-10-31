@@ -4,7 +4,7 @@ import test from 'ava'
 import md5Hex from 'md5-hex'
 import proxyquire from 'proxyquire'
 
-import { createConfig, fromConfig, fromDirectory, prepareCache, restoreVerifier } from '../'
+import {createConfig, fromConfig, fromDirectory, prepareCache, restoreVerifier} from '..'
 import Verifier from '../lib/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
@@ -86,27 +86,27 @@ test('createConfig() throws if options are not provided', t => {
 })
 
 test('createConfig() throws if \'options\' option is not provided', t => {
-  const err = t.throws(() => createConfig({ source: 'foo' }), TypeError)
+  const err = t.throws(() => createConfig({source: 'foo'}), TypeError)
   t.is(err.message, "Expected 'options' and 'source' options")
 })
 
 test('createConfig() throws if \'source\' option is not provided', t => {
-  const err = t.throws(() => createConfig({ options: {} }), TypeError)
+  const err = t.throws(() => createConfig({options: {}}), TypeError)
   t.is(err.message, "Expected 'options' and 'source' options")
 })
 
 test('createConfig() throws if \'options\' option is null', t => {
-  const err = t.throws(() => createConfig({ options: null, source: 'foo' }), TypeError)
+  const err = t.throws(() => createConfig({options: null, source: 'foo'}), TypeError)
   t.is(err.message, "Expected 'options' and 'source' options")
 })
 
 test('createConfig() throws if \'options\' option is an array', t => {
-  const err = t.throws(() => createConfig({ options: [], source: 'foo' }), TypeError)
+  const err = t.throws(() => createConfig({options: [], source: 'foo'}), TypeError)
   t.is(err.message, "'options' must be an actual object")
 })
 
 test('createConfig() throws if \'options\' option is not an object', t => {
-  const err = t.throws(() => createConfig({ options: 'str', source: 'foo' }), TypeError)
+  const err = t.throws(() => createConfig({options: 'str', source: 'foo'}), TypeError)
   t.is(err.message, "'options' must be an actual object")
 })
 
@@ -286,7 +286,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   const result = await fromConfig(createConfig({
     options: require(source), // eslint-disable-line import/no-dynamic-require
     source
-  }), { cache })
+  }), {cache})
 
   for (const file of [
     fixture('compare', '.babelrc'),

@@ -5,7 +5,7 @@ import isMatch from 'lodash.ismatch'
 import proxyquire from 'proxyquire'
 import td from 'testdouble'
 
-import { createConfig } from '../'
+import {createConfig} from '..'
 import collector from '../lib/collector'
 import fixture from './helpers/fixture'
 
@@ -104,17 +104,17 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 {
   const babelrc = () => collector.fromConfig(createConfig({
     json5: true,
-    options: { plugins: ['created-config'] },
+    options: {plugins: ['created-config']},
     source: fixture('babelrc', 'source.js')
   }))
   const pkg = () => collector.fromConfig(createConfig({
     json5: false,
-    options: { plugins: ['created-config'] },
+    options: {plugins: ['created-config']},
     source: fixture('pkg', 'source.js')
   }))
   const disabled = () => collector.fromConfig(createConfig({
     json5: false,
-    options: { babelrc: false, plugins: ['created-config'] },
+    options: {babelrc: false, plugins: ['created-config']},
     source: fixture('babelrc', 'source.js')
   }))
 
@@ -207,7 +207,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 
 {
   const empty = () => collector.fromConfig(createConfig({
-    options: { plugins: ['created-config'] },
+    options: {plugins: ['created-config']},
     source: fixture('empty', 'source.js')
   }))
   test('fromConfig() from empty directory', compare, empty, new Set([
@@ -319,7 +319,7 @@ test('returns null when resolving a directory without configs', async t => {
 })
 
 test('if options were found from directory, provides babelrcDir', async t => {
-  const { babelrcDir } = await collector.fromDirectory(fixture('babelrc'))
+  const {babelrcDir} = await collector.fromDirectory(fixture('babelrc'))
   t.is(babelrcDir, fixture('babelrc'))
 })
 
@@ -329,7 +329,7 @@ test('with a created config, provides babelrcDir', async t => {
   }
   const source = fixture('babelrc', 'source.js')
 
-  const { babelrcDir } = await collector.fromConfig(createConfig({
+  const {babelrcDir} = await collector.fromConfig(createConfig({
     options,
     source
   }))
@@ -467,9 +467,9 @@ test('a cache can be used for file access', async t => {
     td.when(readFile(fixture('complex-env', 'package.json'))).thenCallback(err)
   }
 
-  const { fromDirectory } = proxyquire('../lib/collector', {
+  const {fromDirectory} = proxyquire('../lib/collector', {
     './readSafe': proxyquire('../lib/readSafe', {
-      'graceful-fs': { readFile }
+      'graceful-fs': {readFile}
     })
   })
 
@@ -482,6 +482,6 @@ test('a cache can be used for file access', async t => {
     fromDirectory(fixture('complex-env'), sharedCache)
   ])
 
-  const { callCount } = td.explain(readFile)
+  const {callCount} = td.explain(readFile)
   t.is(callCount, 5)
 })

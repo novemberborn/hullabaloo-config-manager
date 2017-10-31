@@ -54,7 +54,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
   }
   const two = {
     options: {
-      parserOpts: { foo: 1 },
+      parserOpts: {foo: 1},
       plugins: [['./baz', {}], 'foo'],
       presets: [['qux']],
       sourceMaps: false
@@ -63,7 +63,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
   }
   const three = {
     options: {
-      parserOpts: { foo: 2 },
+      parserOpts: {foo: 2},
       presets: [['./bar', {goodbye: true}]]
     },
     source: '3'
@@ -77,23 +77,23 @@ const reduces = (t, defaultChain, envChains, expected) => {
 
   test('reduces config chains', reduces, [one, two], new Map([['foo', [one, two, three, four]]]), {
     dependencies: [
-      { default: true, envs: new Set(['foo']), filename: './bar', fromPackage: null },
-      { default: true, envs: new Set(['foo']), filename: './baz', fromPackage: null },
-      { default: true, envs: new Set(['foo']), filename: 'babel-plugin-foo', fromPackage: '.' },
-      { default: false, envs: new Set(['foo']), filename: 'babel-plugin-quux', fromPackage: '.' },
-      { default: true, envs: new Set(['foo']), filename: 'babel-preset-qux', fromPackage: '.' }
+      {default: true, envs: new Set(['foo']), filename: './bar', fromPackage: null},
+      {default: true, envs: new Set(['foo']), filename: './baz', fromPackage: null},
+      {default: true, envs: new Set(['foo']), filename: 'babel-plugin-foo', fromPackage: '.'},
+      {default: false, envs: new Set(['foo']), filename: 'babel-plugin-quux', fromPackage: '.'},
+      {default: true, envs: new Set(['foo']), filename: 'babel-preset-qux', fromPackage: '.'}
     ],
     envNames: new Set(['foo']),
     sources: [
-      { default: true, envs: new Set(['foo']), source: '1' },
-      { default: true, envs: new Set(['foo']), source: '2' },
-      { default: false, envs: new Set(['foo']), source: '3' },
-      { default: false, envs: new Set(['foo']), source: '4' }
+      {default: true, envs: new Set(['foo']), source: '1'},
+      {default: true, envs: new Set(['foo']), source: '2'},
+      {default: false, envs: new Set(['foo']), source: '3'},
+      {default: false, envs: new Set(['foo']), source: '4'}
     ],
     unflattenedDefaultOptions: Object.assign([
       {
         babelrc: false,
-        parserOpts: { foo: 1 },
+        parserOpts: {foo: 1},
         plugins: ['babel-plugin-foo'],
         presets: [['./bar', {hello: 'world'}]],
         sourceMaps: false
@@ -107,7 +107,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
       ['foo', Object.assign([
         {
           babelrc: false,
-          parserOpts: { foo: 2 },
+          parserOpts: {foo: 2},
           plugins: ['babel-plugin-foo'],
           presets: [['./bar', {hello: 'world'}]],
           sourceMaps: false

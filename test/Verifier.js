@@ -10,7 +10,7 @@ import resolveFrom from 'resolve-from'
 import td from 'testdouble'
 import uniqueTempDir from 'unique-temp-dir'
 
-import { createConfig, fromConfig, fromDirectory, prepareCache } from '../'
+import {createConfig, fromConfig, fromDirectory, prepareCache} from '..'
 import Verifier from '../lib/Verifier'
 
 import fixture from './helpers/fixture'
@@ -198,7 +198,7 @@ test('verifyCurrentEnv() behavior with .babelrc file', async t => {
     }
 
     const result = await verifier.verifyCurrentEnv()
-    const { verifier: newVerifier } = result
+    const {verifier: newVerifier} = result
     delete result.verifier
 
     t.deepEqual(result, {
@@ -281,15 +281,15 @@ test('verifyCurrentEnv() can take fixed source hashes', async t => {
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
   const result = await fromConfig(createConfig({
-    options: { babelrc: true },
+    options: {babelrc: true},
     source: 'foo',
     hash: 'hash of foo'
-  }), { cache: prepareCache() })
+  }), {cache: prepareCache()})
   const verifier = await result.createVerifier()
 
   const cacheKeys = verifier.cacheKeysForCurrentEnv()
 
-  const fixedHashes = { sources: new Map([['foo', 'hash of foo']]) }
+  const fixedHashes = {sources: new Map([['foo', 'hash of foo']])}
   t.deepEqual(await verifier.verifyCurrentEnv(fixedHashes), {
     sourcesChanged: false,
     dependenciesChanged: false,
@@ -326,7 +326,7 @@ test('verifyCurrentEnv() can use cache', async t => {
   const access = td.func()
   const buffer = verifier.toBuffer()
   const stubbedVerifier = proxyquire('../lib/Verifier', {
-    fs: { access }
+    fs: {access}
   }).fromBuffer(buffer)
 
   stubbedVerifier.verifyCurrentEnv(null, cache)
@@ -367,7 +367,7 @@ test('verifyCurrentEnv() behavior with unexpected errors', async t => {
 
   const buffer = (await (await fromDirectory(dir)).createVerifier()).toBuffer()
   const verifier = proxyquire('../lib/Verifier', {
-    fs: { access }
+    fs: {access}
   }).fromBuffer(buffer)
 
   const actual = await t.throws(verifier.verifyCurrentEnv())

@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import test from 'ava'
 import md5Hex from 'md5-hex'
-import { Buffer as SafeBuffer } from 'safe-buffer'
+import {Buffer as SafeBuffer} from 'safe-buffer'
 
 import hashSources from '../lib/hashSources'
 import fixture from './helpers/fixture'
@@ -44,9 +44,9 @@ test('source may contain a dot-prop path', async t => {
 
 test('can use a map of fixed hashes', async t => {
   const hashed = await hashSources([
-    { source: fixture('pkg', 'package.json') },
-    { source: 'foo' },
-    { source: 'bar' }
+    {source: fixture('pkg', 'package.json')},
+    {source: 'foo'},
+    {source: 'bar'}
   ], new Map([
     ['foo', 'hash of foo'],
     ['bar', 'hash of bar']

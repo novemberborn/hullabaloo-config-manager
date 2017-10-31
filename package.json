@@ -46,7 +46,7 @@
     "safe-buffer": "^5.1.1"
   },
   "devDependencies": {
-    "@novemberborn/as-i-preach": "^10.1.0",
+    "@novemberborn/as-i-preach": "^11.0.0",
     "ava": "^0.23.0",
     "babel-core": "^6.26.0",
     "codecov": "^3.0.0",

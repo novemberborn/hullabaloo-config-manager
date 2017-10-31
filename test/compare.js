@@ -1,9 +1,9 @@
-import { runInNewContext } from 'vm'
+import {runInNewContext} from 'vm'
 
 import test from 'ava'
-import { transform } from 'babel-core'
+import {transform} from 'babel-core'
 
-import { createConfig, fromConfig } from '../'
+import {createConfig, fromConfig} from '..'
 import runGeneratedCode from './helpers/runGeneratedCode'
 
 const source = require.resolve('./fixtures/compare/virtual.json')
@@ -26,14 +26,14 @@ function setNodeEnv (envName) {
 }
 
 function transformChain (computedOptions) {
-  const { code, map } = transform('[]', Object.assign(computedOptions, {
+  const {code, map} = transform('[]', Object.assign(computedOptions, {
     filename: source
   }))
   return [runInNewContext(code), map]
 }
 
 function transformBabel () {
-  const { code, map } = transform('[]', {
+  const {code, map} = transform('[]', {
     babelrc: true,
     extends: source,
     filename: source
@@ -42,7 +42,7 @@ function transformBabel () {
 }
 
 test('resolved config matches babel-core', async t => {
-  const config = await fromConfig(createConfig({ options, source }))
+  const config = await fromConfig(createConfig({options, source}))
   const configModule = runGeneratedCode(config.generateModule())
 
   setBabelEnv()

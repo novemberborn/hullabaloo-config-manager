@@ -4,7 +4,7 @@ import path from 'path'
 import test from 'ava'
 import md5Hex from 'md5-hex'
 import packageHash from 'package-hash'
-import { Buffer as SafeBuffer } from 'safe-buffer'
+import {Buffer as SafeBuffer} from 'safe-buffer'
 
 import hashDependencies from '../lib/hashDependencies'
 import fixture from './helpers/fixture'
@@ -13,7 +13,7 @@ test('hashes packages', async t => {
   const fromPackage = fixture('compare', 'node_modules', 'plugin')
   const filename = path.join(fromPackage, 'index.js')
   const hashed = await hashDependencies([
-    { filename, fromPackage }
+    {filename, fromPackage}
   ])
   t.deepEqual(hashed, [await packageHash(path.join(fromPackage, 'package.json'))])
 })
@@ -21,7 +21,7 @@ test('hashes packages', async t => {
 test('hashes files', async t => {
   const filename = fixture('compare', 'node_modules', 'plugin', 'index.js')
   const hashed = await hashDependencies([
-    { filename, fromPackage: null }
+    {filename, fromPackage: null}
   ])
   t.deepEqual(hashed, [md5Hex(fs.readFileSync(filename))])
 })
@@ -31,7 +31,7 @@ test('fails when dependency package does not exist', async t => {
   const filename = path.join(fromPackage, 'index.js')
 
   const err = await t.throws(hashDependencies([
-    { filename, fromPackage }
+    {filename, fromPackage}
   ]))
   t.is(err.name, 'BadDependencyError')
   t.is(err.source, filename)
@@ -42,7 +42,7 @@ test('fails when dependency file does not exist', async t => {
   const filename = path.join('non-existent', 'index.js')
 
   const err = await t.throws(hashDependencies([
-    { filename, fromPackage: null }
+    {filename, fromPackage: null}
   ]))
   t.is(err.name, 'BadDependencyError')
   t.is(err.source, filename)
@@ -56,7 +56,7 @@ test('can use a cache of computed hashes', async t => {
   }
 
   const hashed = await hashDependencies([
-    { filename, fromPackage: null }
+    {filename, fromPackage: null}
   ], cache)
   t.deepEqual(hashed, ['hash'])
 })
@@ -69,7 +69,7 @@ test('caches new hashes', async t => {
   }
 
   const hashed = await hashDependencies([
-    { filename, fromPackage }
+    {filename, fromPackage}
   ], cache)
   const fromCache = await cache.dependencyHashes.get(filename)
   t.true(hashed[0] === fromCache)
@@ -83,7 +83,7 @@ test('can use a cache for file access', async t => {
   }
 
   const hashed = await hashDependencies([
-    { filename, fromPackage: null }
+    {filename, fromPackage: null}
   ], cache)
   t.deepEqual(hashed, [md5Hex(contents)])
 })

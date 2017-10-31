@@ -1,6 +1,6 @@
 import test from 'ava'
 
-import { createConfig } from '../'
+import {createConfig} from '..'
 import collector from '../lib/collector'
 import fixture from './helpers/fixture'
 
@@ -29,7 +29,7 @@ test('fails when .babelrc is an array', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { defaultChain: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-rc', kind))
+    const {defaultChain: [{options, source}]} = await collector.fromDirectory(fixture('bad-rc', kind))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-rc', kind, '.babelrc'))
   }
@@ -54,7 +54,7 @@ test('fails when "babel" value in package.json is an array', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { defaultChain: [ { options, source } ] } = await collector.fromDirectory(fixture('bad-pkg', kind))
+    const {defaultChain: [{options, source}]} = await collector.fromDirectory(fixture('bad-pkg', kind))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-pkg', kind, 'package.json'))
   }
@@ -69,7 +69,7 @@ test('fails when "babel" value in package.json is an array', async t => {
 
 test('fails when extending from a non-existent file', async t => {
   const err = await t.throws(collector.fromConfig(createConfig({
-    options: { extends: 'non-existent' },
+    options: {extends: 'non-existent'},
     source: fixture('source.js')
   })))
   t.is(err.name, 'ExtendsError')
@@ -81,7 +81,7 @@ test('fails when extending from a non-existent file', async t => {
 
 test('fails when extending from an invalid file', async t => {
   const err = await t.throws(collector.fromConfig(createConfig({
-    options: { extends: 'invalid-json5/.babelrc' },
+    options: {extends: 'invalid-json5/.babelrc'},
     source: fixture('bad-rc', 'source.js')
   })))
   t.is(err.name, 'ParseError')
@@ -91,8 +91,8 @@ test('fails when extending from an invalid file', async t => {
 
 {
   const empty = async (t, kind) => {
-    const { defaultChain: [ { options, source } ] } = await collector.fromConfig(createConfig({
-      options: { extends: `${kind}/.babelrc` },
+    const {defaultChain: [{options, source}]} = await collector.fromConfig(createConfig({
+      options: {extends: `${kind}/.babelrc`},
       source: fixture('bad-rc', 'source.js')
     }))
     t.deepEqual(options, {})
