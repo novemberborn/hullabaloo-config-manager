@@ -3,7 +3,6 @@ node_js:
   - 8
   - 6
   - 4
-  - '4.4.7'
 env:
   - FRESH_DEPS=false
   - FRESH_DEPS=true
@@ -19,7 +18,7 @@ cache:
   directories:
     - $HOME/.npm
 before_install:
-  - npm install --global npm@^5.3.0
+  - npm install --global npm@^5.5.1
   - npm --version
   - if [[ ${FRESH_DEPS} == "true" ]]; then rm package-lock.json; fi
 install:
