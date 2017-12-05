@@ -17,7 +17,7 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "prebuild": "rimraf ./build",
-    "prepack": "npm install && npm run build",
+    "prepare": "npm run build",
     "lint": "as-i-preach",
     "test": "ava",
     "posttest": "as-i-preach",

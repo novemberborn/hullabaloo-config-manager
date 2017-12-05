@@ -23,6 +23,5 @@ before_install:
   - if [[ ${FRESH_DEPS} == "true" ]]; then rm package-lock.json; fi
 install:
   - if [[ ${FRESH_DEPS} == "true" ]]; then npm install --prefer-online; else npm install --prefer-offline; fi
-  - npm run build
 script: npm run coverage
 after_success: npx codecov --file=./coverage/lcov.info
