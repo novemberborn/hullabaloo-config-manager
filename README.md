@@ -9,7 +9,7 @@ effective caching.
 of voices: *the babel of voices on the road.*
 
 Use this package to resolve [Babel] config chains. The resulting options result
-in equivalent compilation behavior as if `babel-core` had resolved the config.
+in equivalent compilation behavior as if `@babel/core` had resolved the config.
 
 A Node.js-compatible JavaScript module can be generated which exports a function
 that provides the options object, applicable for the current environment. This
@@ -38,7 +38,7 @@ const configManager = require('hullabaloo-config-manager')
 
 ### `currentEnv(): string`
 
-Returns the current environment value, just like `babel-core` would determine
+Returns the current environment value, just like `@babel/core` would determine
 it.
 
 ### `fromDirectory(dir: string, options?: {cache: Cache}): Promise<ResolvedConfig | null>`
@@ -115,7 +115,7 @@ Returned by `fromConfig()` and `fromDirectory()`.
 
 Generates a Node.js-compatible JavaScript module which exports a `getOptions()`
 function. This function returns a unique options object, applicable for the
-current environment, that can be passed to `babel-core` methods.
+current environment, that can be passed to `@babel/core` methods.
 
 This module needs to evaluated before the `getOptions()` method can be accessed.
 
@@ -136,7 +136,7 @@ object.
 
 Synchronously returns cache keys for the plugin and preset dependencies, and
 config sources, that are applicable to the current environment. Use these values
-to cache the result of `babel-core` transforms.
+to cache the result of `@babel/core` transforms.
 
 #### `Verifier#verifyCurrentEnv(fixedHashes?: {sources: {[source: string]: string}}, cache?: Cache): Promise<{badDependency: true} | {missingSource: true} | {sourcesChanged: true} |  {cacheKeys: {dependencies: string, sources: string}, dependenciesChanged: boolean, sourcesChanged: false, verifier: Verifier}>`
 

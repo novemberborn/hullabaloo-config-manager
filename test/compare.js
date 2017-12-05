@@ -1,7 +1,7 @@
 import {runInNewContext} from 'vm'
 
 import test from 'ava'
-import {transform} from 'babel-core'
+import {transform} from '@babel/core'
 
 import {createConfig, fromConfig} from '..'
 import runGeneratedCode from './helpers/runGeneratedCode'
@@ -41,7 +41,7 @@ function transformBabel () {
   return [runInNewContext(code), map]
 }
 
-test('resolved config matches babel-core', async t => {
+test('resolved config matches @babel/core', async t => {
   const config = await fromConfig(createConfig({options, source}))
   const configModule = runGeneratedCode(config.generateModule())
 
