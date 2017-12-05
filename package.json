@@ -48,8 +48,7 @@
     "md5-hex": "^2.0.0",
     "package-hash": "^2.0.0",
     "pkg-dir": "^2.0.0",
-    "resolve-from": "^4.0.0",
-    "safe-buffer": "^5.1.1"
+    "resolve-from": "^4.0.0"
   },
   "devDependencies": {
     "@novemberborn/as-i-preach": "^11.0.0",

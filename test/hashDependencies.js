@@ -4,7 +4,6 @@ import path from 'path'
 import test from 'ava'
 import md5Hex from 'md5-hex'
 import packageHash from 'package-hash'
-import {Buffer as SafeBuffer} from 'safe-buffer'
 
 import hashDependencies from '../build/hashDependencies'
 import fixture from './helpers/fixture'
@@ -77,7 +76,7 @@ test('caches new hashes', async t => {
 
 test('can use a cache for file access', async t => {
   const filename = fixture('cached-access')
-  const contents = SafeBuffer.from('cached')
+  const contents = Buffer.from('cached')
   const cache = {
     files: new Map([[filename, Promise.resolve(contents)]])
   }

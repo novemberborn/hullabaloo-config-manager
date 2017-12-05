@@ -3,15 +3,12 @@ import path = require('path')
 
 import isEqual = require('lodash.isequal')
 import md5Hex = require('md5-hex')
-import _safeBuffer = require('safe-buffer')
 
 import Cache from './Cache'
 import currentEnv from './currentEnv'
 import hashDependencies from './hashDependencies'
 import hashSources from './hashSources'
 import {Dependency, Source} from './reduceChains'
-
-const SafeBuffer = _safeBuffer.Buffer
 
 function ensureMissingBabelrcFile (file: string, cache?: Cache): Promise<boolean> {
   if (cache && cache.fileExistence && cache.fileExistence.has(file)) {
@@ -175,7 +172,7 @@ export default class Verifier {
   }
 
   public toBuffer (): Buffer {
-    return SafeBuffer.from(JSON.stringify({
+    return Buffer.from(JSON.stringify({
       babelrcDir: this.babelrcDir,
       envNames: this.envNames,
       dependencies: this.dependencies,
