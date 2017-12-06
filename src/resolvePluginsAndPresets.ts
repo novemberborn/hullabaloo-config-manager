@@ -51,6 +51,30 @@ function resolvePackage (filename: string, fromFile: boolean): string | null {
   return pkgDir.sync(filename)
 }
 
+// Based on https://github.com/babel/babel/blob/master/packages/babel-core/src/config/loading/files/plugins.js#L60:L86
+// but with fewer regular expressions 😉
+function standardizeName (kind: Kind, ref: string): {fromFile: boolean, name: string} { // eslint-disable-line typescript/member-delimiter-style
+  if (isFilePath(ref)) return {fromFile: true, name: ref}
+  if (ref.startsWith('module:')) return {fromFile: false, name: ref.slice(7)}
+
+  if (kind === Kind.PLUGIN) {
+    if (ref.startsWith('babel-plugin-') || ref.startsWith('@babel/plugin-')) return {fromFile: false, name: ref}
+    if (ref.startsWith('@babel/')) return {fromFile: false, name: `@babel/plugin-${ref.slice(7)}`}
+    if (!ref.startsWith('@')) return {fromFile: false, name: `babel-plugin-${ref}`}
+  } else {
+    if (ref.startsWith('babel-preset-') || ref.startsWith('@babel/preset-')) return {fromFile: false, name: ref}
+    if (ref.startsWith('@babel/')) return {fromFile: false, name: `@babel/preset-${ref.slice(7)}`}
+    if (!ref.startsWith('@')) return {fromFile: false, name: `babel-preset-${ref}`}
+  }
+
+  // At this point `ref` is guaranteed to be scoped.
+  const matches = /^(@.+?)\/([^/]+)(.*)/.exec(ref)!
+  const scope = matches[1]
+  const partialName = matches[2]
+  const remainder = matches[3]
+  return {fromFile: false, name: `${scope}/babel-${kind === Kind.PLUGIN ? 'plugin' : 'preset'}-${partialName}${remainder}`}
+}
+
 export interface Entry {
   filename: string
   fromPackage: string | null
@@ -83,55 +107,12 @@ export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: 
       const fromDir = config.dir
       const cache = getCache(fromDir)
       const resolve = (kind: Kind, ref: string) => {
-        const possibleNames: {fromFile: boolean; name: string}[] = [] // eslint-disable-line typescript/member-delimiter-style
-        if (isFilePath(ref)) {
-          possibleNames.push({fromFile: true, name: ref})
-        } else {
-          if (kind === Kind.PLUGIN) {
-            // Expand possible plugin names, see
-            // https://github.com/babel/babel/blob/510e93b2bd434f05c816fe6639137b35bac267ed/packages/babel-core/src/helpers/get-possible-plugin-names.js
+        const possibility = standardizeName(kind, ref)
+        const filename = resolveName(possibility.name, fromDir, cache)
+        if (!filename) throw new ResolveError(config.source, kind, ref)
 
-            // Babel doesn't expand scoped plugin references. @ is only valid at
-            // the start of a package name, so disregard refs that would result
-            // in `babel-plugin-@scope/name`.
-            if (!ref.startsWith('@')) {
-              const name = `babel-plugin-${ref}`
-              possibleNames.push({fromFile: false, name})
-            }
-          } else {
-            // Expand possible preset names, see
-            // https://github.com/babel/babel/blob/510e93b2bd434f05c816fe6639137b35bac267ed/packages/babel-core/src/helpers/get-possible-preset-names.js
-
-            const matches = /^(@.+?)\/([^/]+)(.*)/.exec(ref)
-            if (matches !== null) {
-              const scope = matches[1]
-              const partialName = matches[2]
-              const remainder = matches[3]
-
-              const name = `${scope}/babel-preset-${partialName}${remainder}`
-              possibleNames.push({fromFile: false, name})
-            } else {
-              const name = `babel-preset-${ref}`
-              possibleNames.push({fromFile: false, name})
-            }
-          }
-
-          possibleNames.push({fromFile: false, name: ref})
-        }
-
-        let entry: Entry | null = null
-        for (const possibility of possibleNames) {
-          const filename = resolveName(possibility.name, fromDir, cache)
-          if (filename) {
-            const fromPackage = resolvePackage(filename, possibility.fromFile)
-            entry = {filename, fromPackage}
-            break
-          }
-        }
-        if (!entry) {
-          throw new ResolveError(config.source, kind, ref)
-        }
-
+        const fromPackage = resolvePackage(filename, possibility.fromFile)
+        const entry = {filename, fromPackage}
         if (kind === Kind.PLUGIN) {
           plugins.set(ref, entry)
         } else {
