@@ -24,7 +24,7 @@ test('createConfig() allows dir to be specified separately from source', async t
   const result = await fromConfig(createConfig({
     options: {
       babelrc: false,
-      plugins: ['plugin']
+      plugins: ['module:plugin']
     },
     source: 'foo',
     dir

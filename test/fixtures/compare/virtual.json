@@ -1,20 +1,20 @@
 {
   "extends": "./extended-by-virtual.json5",
   "plugins": [
-    ["plugin", {"label": "plugin@virtual"}, "plugin@virtual"]
+    ["module:plugin", {"label": "plugin@virtual"}, "plugin@virtual"]
   ],
   "presets": [
-    ["preset", {"label": "preset@virtual"}, "preset@virtual"]
+    ["module:preset", {"label": "preset@virtual"}, "preset@virtual"]
   ],
   "sourceMaps": true,
   "env": {
     "foo": {
       "extends": "./extended-by-virtual-foo.json5",
       "plugins": [
-        ["plugin", {"label": "plugin@virtual.foo"}, "plugin@virtual.foo"]
+        ["module:plugin", {"label": "plugin@virtual.foo"}, "plugin@virtual.foo"]
       ],
       "presets": [
-        ["preset", {"label": "preset@virtual.foo"}, "preset@virtual.foo"]
+        ["module:preset", {"label": "preset@virtual.foo"}, "preset@virtual.foo"]
       ]
     }
   }

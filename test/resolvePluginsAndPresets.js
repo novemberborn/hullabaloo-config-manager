@@ -37,18 +37,25 @@ import pkgDirMock from './helpers/pkgDirMock'
       options: {
         plugins: [
           'plugin',
+          'babel-plugin-plugin',
+          '@babel/plugin',
+          '@babel/plugin-plugin',
           ['plugin-with-options', {}],
           '../relative-plugin',
-          'exact-plugin',
-          '@scope/exact-plugin'
+          'module:exact-plugin',
+          '@scope/plugin',
+          'module:@scope/exact-plugin'
         ],
         presets: [
           'preset',
+          'babel-preset-preset',
+          '@babel/preset',
+          '@babel/preset-preset',
           ['preset-with-options', {}],
           '../relative-preset',
-          'exact-preset',
+          'module:exact-preset',
           '@scope/preset',
-          '@scope/exact-preset'
+          'module:@scope/exact-preset'
         ]
       },
       dir: path.resolve('my-configs')
@@ -63,6 +70,18 @@ import pkgDirMock from './helpers/pkgDirMock'
             filename: path.resolve('node_modules/babel-plugin-plugin/index.js'),
             fromPackage: path.resolve('node_modules/babel-plugin-plugin')
           }],
+          ['babel-plugin-plugin', {
+            filename: path.resolve('node_modules/babel-plugin-plugin/index.js'),
+            fromPackage: path.resolve('node_modules/babel-plugin-plugin')
+          }],
+          ['@babel/plugin', {
+            filename: path.resolve('node_modules/@babel/plugin-plugin/index.js'),
+            fromPackage: path.resolve('node_modules/@babel/plugin-plugin')
+          }],
+          ['@babel/plugin-plugin', {
+            filename: path.resolve('node_modules/@babel/plugin-plugin/index.js'),
+            fromPackage: path.resolve('node_modules/@babel/plugin-plugin')
+          }],
           ['plugin-with-options', {
             filename: path.resolve('node_modules/babel-plugin-plugin-with-options/index.js'),
             fromPackage: path.resolve('node_modules/babel-plugin-plugin-with-options')
@@ -71,11 +90,15 @@ import pkgDirMock from './helpers/pkgDirMock'
             filename: path.resolve('relative-plugin.js'),
             fromPackage: null
           }],
-          ['exact-plugin', {
+          ['module:exact-plugin', {
             filename: path.resolve('node_modules/exact-plugin/index.js'),
             fromPackage: path.resolve('node_modules/exact-plugin')
           }],
-          ['@scope/exact-plugin', {
+          ['@scope/plugin', {
+            filename: path.resolve('node_modules/@scope/babel-plugin-plugin/index.js'),
+            fromPackage: path.resolve('node_modules/@scope/babel-plugin-plugin')
+          }],
+          ['module:@scope/exact-plugin', {
             filename: path.resolve('node_modules/@scope/exact-plugin/index.js'),
             fromPackage: path.resolve('node_modules/@scope/exact-plugin')
           }]
@@ -85,6 +108,18 @@ import pkgDirMock from './helpers/pkgDirMock'
             filename: path.resolve('node_modules/babel-preset-preset/index.js'),
             fromPackage: path.resolve('node_modules/babel-preset-preset')
           }],
+          ['babel-preset-preset', {
+            filename: path.resolve('node_modules/babel-preset-preset/index.js'),
+            fromPackage: path.resolve('node_modules/babel-preset-preset')
+          }],
+          ['@babel/preset', {
+            filename: path.resolve('node_modules/@babel/preset-preset/index.js'),
+            fromPackage: path.resolve('node_modules/@babel/preset-preset')
+          }],
+          ['@babel/preset-preset', {
+            filename: path.resolve('node_modules/@babel/preset-preset/index.js'),
+            fromPackage: path.resolve('node_modules/@babel/preset-preset')
+          }],
           ['preset-with-options', {
             filename: path.resolve('node_modules/babel-preset-preset-with-options/index.js'),
             fromPackage: path.resolve('node_modules/babel-preset-preset-with-options')
@@ -93,7 +128,7 @@ import pkgDirMock from './helpers/pkgDirMock'
             filename: path.resolve('relative-preset.js'),
             fromPackage: null
           }],
-          ['exact-preset', {
+          ['module:exact-preset', {
             filename: path.resolve('node_modules/exact-preset/index.js'),
             fromPackage: path.resolve('node_modules/exact-preset')
           }],
@@ -101,7 +136,7 @@ import pkgDirMock from './helpers/pkgDirMock'
             filename: path.resolve('node_modules/@scope/babel-preset-preset/index.js'),
             fromPackage: path.resolve('node_modules/@scope/babel-preset-preset')
           }],
-          ['@scope/exact-preset', {
+          ['module:@scope/exact-preset', {
             filename: path.resolve('node_modules/@scope/exact-preset/index.js'),
             fromPackage: path.resolve('node_modules/@scope/exact-preset')
           }]
