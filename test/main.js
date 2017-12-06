@@ -156,6 +156,13 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'plugin@extended-by-babelrc'
         },
         'plugin@extended-by-babelrc'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc'
+        },
+        'plugin@babelrc'
       ]
     ],
     presets: [
@@ -165,32 +172,17 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc'
+        },
+        'preset@babelrc'
       ]
     ],
     babelrc: false,
-    sourceMaps: false,
-    env: {
-      development: {
-        plugins: [
-          [
-            pluginIndex,
-            {
-              label: 'plugin@babelrc'
-            },
-            'plugin@babelrc'
-          ]
-        ],
-        presets: [
-          [
-            presetIndex,
-            {
-              label: 'preset@babelrc'
-            },
-            'preset@babelrc'
-          ]
-        ]
-      }
-    }
+    sourceMaps: false
   })
 
   env.BABEL_ENV = 'foo'
@@ -204,7 +196,29 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'plugin@extended-by-babelrc'
         },
         'plugin@extended-by-babelrc'
-      ]
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-babelrc.foo'
+        },
+        'plugin@extended-by-babelrc.foo'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc'
+        },
+        'plugin@babelrc'
+      ],
+      [
+        envPluginIndex,
+        {
+          label: 'plugin@babelrc.foo'
+        },
+        'plugin@babelrc.foo'
+      ],
+      pluginDefaultOptsIndex
     ],
     presets: [
       [
@@ -213,77 +227,31 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-babelrc.foo'
+        },
+        'preset@extended-by-babelrc.foo'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc'
+        },
+        'preset@babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc.foo'
+        },
+        'preset@babelrc.foo'
       ]
     ],
     babelrc: false,
-    sourceMaps: false,
-    env: {
-      foo: {
-        plugins: [
-          [
-            pluginIndex,
-            {
-              label: 'plugin@extended-by-babelrc.foo'
-            },
-            'plugin@extended-by-babelrc.foo'
-          ]
-        ],
-        presets: [
-          [
-            presetIndex,
-            {
-              label: 'preset@extended-by-babelrc.foo'
-            },
-            'preset@extended-by-babelrc.foo'
-          ]
-        ],
-        env: {
-          foo: {
-            plugins: [
-              [
-                pluginIndex,
-                {
-                  label: 'plugin@babelrc'
-                },
-                'plugin@babelrc'
-              ]
-            ],
-            presets: [
-              [
-                presetIndex,
-                {
-                  label: 'preset@babelrc'
-                },
-                'preset@babelrc'
-              ]
-            ],
-            env: {
-              foo: {
-                plugins: [
-                  [
-                    envPluginIndex,
-                    {
-                      label: 'plugin@babelrc.foo'
-                    },
-                    'plugin@babelrc.foo'
-                  ],
-                  pluginDefaultOptsIndex
-                ],
-                presets: [
-                  [
-                    presetIndex,
-                    {
-                      label: 'preset@babelrc.foo'
-                    },
-                    'preset@babelrc.foo'
-                  ]
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
+    sourceMaps: false
   })
 })
 
@@ -326,6 +294,27 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'plugin@extended-by-babelrc'
         },
         'plugin@extended-by-babelrc'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc'
+        },
+        'plugin@babelrc'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-virtual'
+        },
+        'plugin@extended-by-virtual'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@virtual'
+        },
+        'plugin@virtual'
       ]
     ],
     presets: [
@@ -335,76 +324,31 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc'
+        },
+        'preset@babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-virtual'
+        },
+        'preset@extended-by-virtual'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@virtual'
+        },
+        'preset@virtual'
       ]
     ],
     babelrc: false,
-    sourceMaps: true,
-    env: {
-      development: {
-        plugins: [
-          [
-            pluginIndex,
-            {
-              label: 'plugin@babelrc'
-            },
-            'plugin@babelrc'
-          ]
-        ],
-        presets: [
-          [
-            presetIndex,
-            {
-              label: 'preset@babelrc'
-            },
-            'preset@babelrc'
-          ]
-        ],
-        env: {
-          development: {
-            plugins: [
-              [
-                pluginIndex,
-                {
-                  label: 'plugin@extended-by-virtual'
-                },
-                'plugin@extended-by-virtual'
-              ]
-            ],
-            presets: [
-              [
-                presetIndex,
-                {
-                  label: 'preset@extended-by-virtual'
-                },
-                'preset@extended-by-virtual'
-              ]
-            ],
-            env: {
-              development: {
-                plugins: [
-                  [
-                    pluginIndex,
-                    {
-                      label: 'plugin@virtual'
-                    },
-                    'plugin@virtual'
-                  ]
-                ],
-                presets: [
-                  [
-                    presetIndex,
-                    {
-                      label: 'preset@virtual'
-                    },
-                    'preset@virtual'
-                  ]
-                ]
-              }
-            }
-          }
-        }
-      }
-    }
+    sourceMaps: true
   })
 
   env.BABEL_ENV = 'foo'
@@ -416,6 +360,63 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'plugin@extended-by-babelrc'
         },
         'plugin@extended-by-babelrc'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-babelrc.foo'
+        },
+        'plugin@extended-by-babelrc.foo'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc'
+        },
+        'plugin@babelrc'
+      ],
+      [
+        envPluginIndex,
+        {
+          label: 'plugin@babelrc.foo'
+        },
+        'plugin@babelrc.foo'
+      ],
+      pluginDefaultOptsIndex,
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-virtual'
+        },
+        'plugin@extended-by-virtual'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-virtual.foo'
+        },
+        'plugin@extended-by-virtual.foo'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@virtual'
+        },
+        'plugin@virtual'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@extended-by-virtual-foo'
+        },
+        'plugin@extended-by-virtual-foo'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@virtual.foo'
+        },
+        'plugin@virtual.foo'
       ]
     ],
     presets: [
@@ -425,187 +426,66 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-babelrc.foo'
+        },
+        'preset@extended-by-babelrc.foo'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc'
+        },
+        'preset@babelrc'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@babelrc.foo'
+        },
+        'preset@babelrc.foo'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-virtual'
+        },
+        'preset@extended-by-virtual'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-virtual.foo'
+        },
+        'preset@extended-by-virtual.foo'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@virtual'
+        },
+        'preset@virtual'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@extended-by-virtual-foo'
+        },
+        'preset@extended-by-virtual-foo'
+      ],
+      [
+        presetIndex,
+        {
+          label: 'preset@virtual.foo'
+        },
+        'preset@virtual.foo'
       ]
     ],
     babelrc: false,
-    sourceMaps: true,
-    env: {
-      foo: {
-        plugins: [
-          [
-            pluginIndex,
-            {
-              label: 'plugin@extended-by-babelrc.foo'
-            },
-            'plugin@extended-by-babelrc.foo'
-          ]
-        ],
-        presets: [
-          [
-            presetIndex,
-            {
-              label: 'preset@extended-by-babelrc.foo'
-            },
-            'preset@extended-by-babelrc.foo'
-          ]
-        ],
-        env: {
-          foo: {
-            plugins: [
-              [
-                pluginIndex,
-                {
-                  label: 'plugin@babelrc'
-                },
-                'plugin@babelrc'
-              ]
-            ],
-            presets: [
-              [
-                presetIndex,
-                {
-                  label: 'preset@babelrc'
-                },
-                'preset@babelrc'
-              ]
-            ],
-            env: {
-              foo: {
-                plugins: [
-                  [
-                    envPluginIndex,
-                    {
-                      label: 'plugin@babelrc.foo'
-                    },
-                    'plugin@babelrc.foo'
-                  ],
-                  pluginDefaultOptsIndex
-                ],
-                presets: [
-                  [
-                    presetIndex,
-                    {
-                      label: 'preset@babelrc.foo'
-                    },
-                    'preset@babelrc.foo'
-                  ]
-                ],
-                env: {
-                  foo: {
-                    plugins: [
-                      [
-                        pluginIndex,
-                        {
-                          label: 'plugin@extended-by-virtual'
-                        },
-                        'plugin@extended-by-virtual'
-                      ]
-                    ],
-                    presets: [
-                      [
-                        presetIndex,
-                        {
-                          label: 'preset@extended-by-virtual'
-                        },
-                        'preset@extended-by-virtual'
-                      ]
-                    ],
-                    env: {
-                      foo: {
-                        plugins: [
-                          [
-                            pluginIndex,
-                            {
-                              label: 'plugin@extended-by-virtual.foo'
-                            },
-                            'plugin@extended-by-virtual.foo'
-                          ]
-                        ],
-                        presets: [
-                          [
-                            presetIndex,
-                            {
-                              label: 'preset@extended-by-virtual.foo'
-                            },
-                            'preset@extended-by-virtual.foo'
-                          ]
-                        ],
-                        env: {
-                          foo: {
-                            plugins: [
-                              [
-                                pluginIndex,
-                                {
-                                  label: 'plugin@virtual'
-                                },
-                                'plugin@virtual'
-                              ]
-                            ],
-                            presets: [
-                              [
-                                presetIndex,
-                                {
-                                  label: 'preset@virtual'
-                                },
-                                'preset@virtual'
-                              ]
-                            ],
-                            env: {
-                              foo: {
-                                plugins: [
-                                  [
-                                    pluginIndex,
-                                    {
-                                      label: 'plugin@extended-by-virtual-foo'
-                                    },
-                                    'plugin@extended-by-virtual-foo'
-                                  ]
-                                ],
-                                presets: [
-                                  [
-                                    presetIndex,
-                                    {
-                                      label: 'preset@extended-by-virtual-foo'
-                                    },
-                                    'preset@extended-by-virtual-foo'
-                                  ]
-                                ],
-                                env: {
-                                  foo: {
-                                    plugins: [
-                                      [
-                                        pluginIndex,
-                                        {
-                                          label: 'plugin@virtual.foo'
-                                        },
-                                        'plugin@virtual.foo'
-                                      ]
-                                    ],
-                                    presets: [
-                                      [
-                                        presetIndex,
-                                        {
-                                          label: 'preset@virtual.foo'
-                                        },
-                                        'preset@virtual.foo'
-                                      ]
-                                    ]
-                                  }
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    sourceMaps: true
   })
 })
 
