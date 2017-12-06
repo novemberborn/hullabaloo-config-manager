@@ -65,7 +65,8 @@ const defaultOptions = envName => {
         ${modulePath('plugin')},
         {
           label: "plugin@extended-by-babelrc"
-        }
+        },
+        "plugin@extended-by-babelrc"
       ]
     ],
     presets: [
@@ -73,7 +74,8 @@ const defaultOptions = envName => {
         ${modulePath('preset')},
         {
           label: "preset@extended-by-babelrc"
-        }
+        },
+        "preset@extended-by-babelrc"
       ]
     ],
     babelrc: false
@@ -89,7 +91,8 @@ envOptions["foo"] = () => {
         ${modulePath('plugin')},
         {
           label: "plugin@extended-by-babelrc"
-        }
+        },
+        "plugin@extended-by-babelrc"
       ]
     ],
     presets: [
@@ -97,7 +100,8 @@ envOptions["foo"] = () => {
         ${modulePath('preset')},
         {
           label: "preset@extended-by-babelrc"
-        }
+        },
+        "preset@extended-by-babelrc"
       ]
     ],
     babelrc: false,
@@ -108,7 +112,8 @@ envOptions["foo"] = () => {
             ${modulePath('plugin')},
             {
               label: "plugin@extended-by-babelrc.foo"
-            }
+            },
+            "plugin@extended-by-babelrc.foo"
           ]
         ],
         presets: [
@@ -116,7 +121,8 @@ envOptions["foo"] = () => {
             ${modulePath('preset')},
             {
               label: "preset@extended-by-babelrc.foo"
-            }
+            },
+            "preset@extended-by-babelrc.foo"
           ]
         ]
       }
