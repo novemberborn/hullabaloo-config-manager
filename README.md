@@ -197,6 +197,11 @@ contains a `NoSourceFile` error.
 Used when a config file is invalid. The file path is available through the
 `source` property.
 
+#### `MultipleSourcesError`
+
+Used when multiple configuration files are found. File paths are available
+through the `source` and `otherSource` properties.
+
 #### `NoSourceFileError`
 
 Used when a file does not exist. The file path is available through the `source`

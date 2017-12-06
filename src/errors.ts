@@ -47,3 +47,13 @@ export class BadDependencyError extends SourceError {
     this.name = 'BadDependencyError'
   }
 }
+
+export class MultipleSourcesError extends SourceError {
+  public readonly otherSource: string
+
+  public constructor (source: string, otherSource: string) {
+    super('Multiple configuration files found', source)
+    this.name = 'MultipleSourcesError'
+    this.otherSource = otherSource
+  }
+}
