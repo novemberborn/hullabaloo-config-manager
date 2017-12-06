@@ -44,6 +44,10 @@ const reduces = (t, defaultChain, envChains, expected) => {
 }
 
 {
+  const zero = {
+    options: {},
+    source: '0'
+  }
   const one = {
     options: {
       plugins: ['foo'],
@@ -75,7 +79,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
     source: '4'
   }
 
-  test('reduces config chains', reduces, [one, two], new Map([['foo', [one, two, three, four]]]), {
+  test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four]]]), {
     dependencies: [
       {default: true, envs: new Set(['foo']), filename: './bar', fromPackage: null},
       {default: true, envs: new Set(['foo']), filename: './baz', fromPackage: null},
@@ -85,6 +89,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
     ],
     envNames: new Set(['foo']),
     sources: [
+      {default: true, envs: new Set(), source: '0'},
       {default: true, envs: new Set(['foo']), source: '1'},
       {default: true, envs: new Set(['foo']), source: '2'},
       {default: false, envs: new Set(['foo']), source: '3'},
@@ -94,13 +99,16 @@ const reduces = (t, defaultChain, envChains, expected) => {
       {
         babelrc: false,
         parserOpts: {foo: 1},
-        plugins: ['babel-plugin-foo'],
-        presets: [['./bar', {hello: 'world'}]],
+        plugins: [
+          'babel-plugin-foo',
+          ['./baz', {}],
+          'babel-plugin-foo'
+        ],
+        presets: [
+          ['./bar', {hello: 'world'}],
+          'babel-preset-qux'
+        ],
         sourceMaps: false
-      },
-      {
-        plugins: [['./baz', {}], 'babel-plugin-foo'],
-        presets: ['babel-preset-qux']
       }
     ], {json5: false}),
     unflattenedEnvOptions: new Map([
@@ -108,19 +116,18 @@ const reduces = (t, defaultChain, envChains, expected) => {
         {
           babelrc: false,
           parserOpts: {foo: 2},
-          plugins: ['babel-plugin-foo'],
-          presets: [['./bar', {hello: 'world'}]],
+          plugins: [
+            'babel-plugin-foo',
+            ['./baz', {}],
+            'babel-plugin-foo',
+            'babel-plugin-quux'
+          ],
+          presets: [
+            ['./bar', {hello: 'world'}],
+            'babel-preset-qux',
+            ['./bar', {goodbye: true}]
+          ],
           sourceMaps: false
-        },
-        {
-          plugins: [['./baz', {}], 'babel-plugin-foo'],
-          presets: ['babel-preset-qux']
-        },
-        {
-          presets: [['./bar', {goodbye: true}]]
-        },
-        {
-          plugins: ['babel-plugin-quux']
         }
       ], {json5: false})]
     ])
@@ -181,6 +188,48 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
 ], new Map(), {
   json5: true
 })
+
+{
+  const babelrc = false
+  const ignore = {ignore: true}
+  const only = {only: true}
+  const passPerPreset = {passPerPreset: true}
+  const sourceMap = {sourceMap: true}
+
+  test('normalizes options', reduces, [
+    {
+      json5: false,
+      options: {
+        ignore,
+        only,
+        passPerPreset,
+        sourceMaps: null
+      }
+    },
+    {
+      json5: false,
+      options: {
+        babelrc,
+        // These should be stripped before options are merged with base
+        ignore: null,
+        only: null,
+        passPerPreset: null,
+        // `sourceMap` should be merged as `sourceMaps`
+        sourceMap
+      }
+    }
+  ], new Map(), {
+    unflattenedDefaultOptions: Object.assign([
+      {
+        babelrc,
+        ignore,
+        only,
+        passPerPreset,
+        sourceMaps: sourceMap
+      }
+    ], {json5: false})
+  })
+}
 
 test('collects fixed source hashes', reduces, [
   {
