@@ -1,13 +1,13 @@
-declare type Plugins = Array<string | [string, any]>
-declare type Presets = Array<string | [string, any]>
+declare type PluginOrPresetDescriptor = string | [string] | [string, any] | [string, any, string]
+declare type PluginOrPresetList = Array<PluginOrPresetDescriptor>
 declare interface ReducedOptions {
   babelrc?: boolean
   env?: {[name: string]: ReducedOptions}
   extends?: string
-  plugins?: Plugins
-  presets?: Presets
+  plugins?: PluginOrPresetList
+  presets?: PluginOrPresetList
 }
-export {ReducedOptions, Plugins, Presets}
+export {ReducedOptions, PluginOrPresetDescriptor, PluginOrPresetList}
 
 // From https://github.com/DefinitelyTyped/DefinitelyTyped/blob/99f93266bb31438c1d4c4e1ce82a3ce343c210c3/types/babel-core/index.d.ts
 // but without documentation or external type dependencies.

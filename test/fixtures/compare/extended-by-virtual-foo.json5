@@ -1,8 +1,8 @@
 {
   plugins: [
-    ['plugin', {label: 'plugin@extended-by-virtual-foo'}]
+    ['plugin', {label: 'plugin@extended-by-virtual-foo'}, 'plugin@extended-by-virtual-foo']
   ],
   presets: [
-    ['preset', {label: 'preset@extended-by-virtual-foo'}]
+    ['preset', {label: 'preset@extended-by-virtual-foo'}, 'preset@extended-by-virtual-foo']
   ]
 }

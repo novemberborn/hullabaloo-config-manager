@@ -154,7 +154,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         pluginIndex,
         {
           label: 'plugin@extended-by-babelrc'
-        }
+        },
+        'plugin@extended-by-babelrc'
       ]
     ],
     presets: [
@@ -162,7 +163,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         presetIndex,
         {
           label: 'preset@extended-by-babelrc'
-        }
+        },
+        'preset@extended-by-babelrc'
       ]
     ],
     babelrc: false,
@@ -174,7 +176,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
             pluginIndex,
             {
               label: 'plugin@babelrc'
-            }
+            },
+            'plugin@babelrc'
           ]
         ],
         presets: [
@@ -182,7 +185,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
             presetIndex,
             {
               label: 'preset@babelrc'
-            }
+            },
+            'preset@babelrc'
           ]
         ]
       }
@@ -198,7 +202,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         pluginIndex,
         {
           label: 'plugin@extended-by-babelrc'
-        }
+        },
+        'plugin@extended-by-babelrc'
       ]
     ],
     presets: [
@@ -206,7 +211,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         presetIndex,
         {
           label: 'preset@extended-by-babelrc'
-        }
+        },
+        'preset@extended-by-babelrc'
       ]
     ],
     babelrc: false,
@@ -218,7 +224,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
             pluginIndex,
             {
               label: 'plugin@extended-by-babelrc.foo'
-            }
+            },
+            'plugin@extended-by-babelrc.foo'
           ]
         ],
         presets: [
@@ -226,7 +233,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
             presetIndex,
             {
               label: 'preset@extended-by-babelrc.foo'
-            }
+            },
+            'preset@extended-by-babelrc.foo'
           ]
         ],
         env: {
@@ -236,7 +244,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
                 pluginIndex,
                 {
                   label: 'plugin@babelrc'
-                }
+                },
+                'plugin@babelrc'
               ]
             ],
             presets: [
@@ -244,7 +253,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
                 presetIndex,
                 {
                   label: 'preset@babelrc'
-                }
+                },
+                'preset@babelrc'
               ]
             ],
             env: {
@@ -254,7 +264,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
                     envPluginIndex,
                     {
                       label: 'plugin@babelrc.foo'
-                    }
+                    },
+                    'plugin@babelrc.foo'
                   ],
                   pluginDefaultOptsIndex
                 ],
@@ -263,7 +274,8 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
                     presetIndex,
                     {
                       label: 'preset@babelrc.foo'
-                    }
+                    },
+                    'preset@babelrc.foo'
                   ]
                 ]
               }
@@ -312,7 +324,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         pluginIndex,
         {
           label: 'plugin@extended-by-babelrc'
-        }
+        },
+        'plugin@extended-by-babelrc'
       ]
     ],
     presets: [
@@ -320,7 +333,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         presetIndex,
         {
           label: 'preset@extended-by-babelrc'
-        }
+        },
+        'preset@extended-by-babelrc'
       ]
     ],
     babelrc: false,
@@ -332,7 +346,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
             pluginIndex,
             {
               label: 'plugin@babelrc'
-            }
+            },
+            'plugin@babelrc'
           ]
         ],
         presets: [
@@ -340,7 +355,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
             presetIndex,
             {
               label: 'preset@babelrc'
-            }
+            },
+            'preset@babelrc'
           ]
         ],
         env: {
@@ -350,7 +366,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                 pluginIndex,
                 {
                   label: 'plugin@extended-by-virtual'
-                }
+                },
+                'plugin@extended-by-virtual'
               ]
             ],
             presets: [
@@ -358,7 +375,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                 presetIndex,
                 {
                   label: 'preset@extended-by-virtual'
-                }
+                },
+                'preset@extended-by-virtual'
               ]
             ],
             env: {
@@ -368,7 +386,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                     pluginIndex,
                     {
                       label: 'plugin@virtual'
-                    }
+                    },
+                    'plugin@virtual'
                   ]
                 ],
                 presets: [
@@ -376,7 +395,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                     presetIndex,
                     {
                       label: 'preset@virtual'
-                    }
+                    },
+                    'preset@virtual'
                   ]
                 ]
               }
@@ -394,7 +414,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         pluginIndex,
         {
           label: 'plugin@extended-by-babelrc'
-        }
+        },
+        'plugin@extended-by-babelrc'
       ]
     ],
     presets: [
@@ -402,7 +423,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         presetIndex,
         {
           label: 'preset@extended-by-babelrc'
-        }
+        },
+        'preset@extended-by-babelrc'
       ]
     ],
     babelrc: false,
@@ -414,7 +436,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
             pluginIndex,
             {
               label: 'plugin@extended-by-babelrc.foo'
-            }
+            },
+            'plugin@extended-by-babelrc.foo'
           ]
         ],
         presets: [
@@ -422,7 +445,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
             presetIndex,
             {
               label: 'preset@extended-by-babelrc.foo'
-            }
+            },
+            'preset@extended-by-babelrc.foo'
           ]
         ],
         env: {
@@ -432,7 +456,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                 pluginIndex,
                 {
                   label: 'plugin@babelrc'
-                }
+                },
+                'plugin@babelrc'
               ]
             ],
             presets: [
@@ -440,7 +465,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                 presetIndex,
                 {
                   label: 'preset@babelrc'
-                }
+                },
+                'preset@babelrc'
               ]
             ],
             env: {
@@ -450,7 +476,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                     envPluginIndex,
                     {
                       label: 'plugin@babelrc.foo'
-                    }
+                    },
+                    'plugin@babelrc.foo'
                   ],
                   pluginDefaultOptsIndex
                 ],
@@ -459,7 +486,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                     presetIndex,
                     {
                       label: 'preset@babelrc.foo'
-                    }
+                    },
+                    'preset@babelrc.foo'
                   ]
                 ],
                 env: {
@@ -469,7 +497,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                         pluginIndex,
                         {
                           label: 'plugin@extended-by-virtual'
-                        }
+                        },
+                        'plugin@extended-by-virtual'
                       ]
                     ],
                     presets: [
@@ -477,7 +506,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                         presetIndex,
                         {
                           label: 'preset@extended-by-virtual'
-                        }
+                        },
+                        'preset@extended-by-virtual'
                       ]
                     ],
                     env: {
@@ -487,7 +517,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                             pluginIndex,
                             {
                               label: 'plugin@extended-by-virtual.foo'
-                            }
+                            },
+                            'plugin@extended-by-virtual.foo'
                           ]
                         ],
                         presets: [
@@ -495,7 +526,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                             presetIndex,
                             {
                               label: 'preset@extended-by-virtual.foo'
-                            }
+                            },
+                            'preset@extended-by-virtual.foo'
                           ]
                         ],
                         env: {
@@ -505,7 +537,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                 pluginIndex,
                                 {
                                   label: 'plugin@virtual'
-                                }
+                                },
+                                'plugin@virtual'
                               ]
                             ],
                             presets: [
@@ -513,7 +546,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                 presetIndex,
                                 {
                                   label: 'preset@virtual'
-                                }
+                                },
+                                'preset@virtual'
                               ]
                             ],
                             env: {
@@ -523,7 +557,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                     pluginIndex,
                                     {
                                       label: 'plugin@extended-by-virtual-foo'
-                                    }
+                                    },
+                                    'plugin@extended-by-virtual-foo'
                                   ]
                                 ],
                                 presets: [
@@ -531,7 +566,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                     presetIndex,
                                     {
                                       label: 'preset@extended-by-virtual-foo'
-                                    }
+                                    },
+                                    'preset@extended-by-virtual-foo'
                                   ]
                                 ],
                                 env: {
@@ -541,7 +577,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                         pluginIndex,
                                         {
                                           label: 'plugin@virtual.foo'
-                                        }
+                                        },
+                                        'plugin@virtual.foo'
                                       ]
                                     ],
                                     presets: [
@@ -549,7 +586,8 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
                                         presetIndex,
                                         {
                                           label: 'preset@virtual.foo'
-                                        }
+                                        },
+                                        'preset@virtual.foo'
                                       ]
                                     ]
                                   }

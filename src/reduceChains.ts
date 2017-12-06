@@ -1,7 +1,7 @@
 import cloneDeepWith = require('lodash.clonedeepwith')
 import merge = require('lodash.merge')
 
-import BabelOptions, {ReducedOptions, Plugins, Presets} from './BabelOptions'
+import BabelOptions, {ReducedOptions, PluginOrPresetDescriptor, PluginOrPresetList} from './BabelOptions'
 import Cache from './Cache'
 import {Chain, Chains} from './collector'
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
@@ -65,7 +65,7 @@ function trackSource (sourceMap: SourceMap, source: string, envName: string | nu
   })
 }
 
-function createOptions (plugins?: Plugins, presets?: Presets): ReducedOptions {
+function createOptions (plugins?: PluginOrPresetList, presets?: PluginOrPresetList): ReducedOptions {
   const options: ReducedOptions = {}
   if (plugins) options.plugins = plugins
   // istanbul ignore else
@@ -99,6 +99,27 @@ function compressOptions (orderedOptions: BabelOptions[], json5: boolean): Compr
   return Object.assign(remaining, {json5})
 }
 
+function mapPluginOrPreset (
+  envName: string | null,
+  dependencyMap: DependencyMap,
+  getEntry: (ref: string) => Entry,
+  ref: PluginOrPresetDescriptor
+): string | [string, any] | [string, any, string] {
+  if (Array.isArray(ref)) {
+    const filename = mapPluginOrPreset(envName, dependencyMap, getEntry, ref[0]) as string
+
+    switch (ref.length) {
+      case 1: return filename
+      case 2: return [filename, ref[1]]
+      default: return [filename, ref[1], ref[2]]
+    }
+  }
+
+  const entry = getEntry(ref)
+  trackDependency(dependencyMap, entry.filename, entry.fromPackage, envName)
+  return entry.filename
+}
+
 function reduceOptions (
   chain: Chain,
   envName: string | null,
@@ -121,23 +142,11 @@ function reduceOptions (
     // `config`. Don't handle situations where this is not the case. This is an
     // internal module after all.
     const lookup = pluginsAndPresets.get(config)!
-    const mapPluginOrPreset = (getEntry: (ref: string) => Entry, ref: string | [string, any]): string | [string, any] => {
-      if (Array.isArray(ref)) {
-        return ref.length === 1
-          ? mapPluginOrPreset(getEntry, ref[0])
-          : [mapPluginOrPreset(getEntry, ref[0]), ref[1]] as [string, any]
-      }
-
-      const entry = getEntry(ref)
-      trackDependency(dependencyMap, entry.filename, entry.fromPackage, envName)
-      return entry.filename
-    }
-
     return cloneDeepWith(config.options, (value, key, object) => {
       if (object === config.options && (key === 'plugins' || key === 'presets')) {
         const getEntry = (ref: string) => lookup[key].get(ref)!
         return Array.isArray(value)
-          ? (value as Plugins | Presets).map(ref => mapPluginOrPreset(getEntry, ref))
+          ? (value as PluginOrPresetList).map(ref => mapPluginOrPreset(envName, dependencyMap, getEntry, ref))
           : []
       }
 

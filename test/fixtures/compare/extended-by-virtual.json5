@@ -1,17 +1,17 @@
 {
   plugins: [
-    ['plugin', {label: 'plugin@extended-by-virtual'}]
+    ['plugin', {label: 'plugin@extended-by-virtual'}, 'plugin@extended-by-virtual']
   ],
   presets: [
-    ['preset', {label: 'preset@extended-by-virtual'}]
+    ['preset', {label: 'preset@extended-by-virtual'}, 'preset@extended-by-virtual']
   ],
   env: {
     foo: {
       plugins: [
-        ['plugin', {label: 'plugin@extended-by-virtual.foo'}]
+        ['plugin', {label: 'plugin@extended-by-virtual.foo'}, 'plugin@extended-by-virtual.foo']
       ],
       presets: [
-        ['preset', {label: 'preset@extended-by-virtual.foo'}]
+        ['preset', {label: 'preset@extended-by-virtual.foo'}, 'preset@extended-by-virtual.foo']
       ]
     }
   }
