@@ -100,7 +100,7 @@ export class Config {
 
     if (!env) return new Map()
 
-    const take = Object.keys(env).filter(Boolean).map<[string, ReducedOptions]>(name => [name, env[name]])
+    const take = Object.keys(env).map<[string, ReducedOptions]>(name => [name, env[name]])
     return new Map(take)
   }
 
