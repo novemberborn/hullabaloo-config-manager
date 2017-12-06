@@ -13,11 +13,8 @@ function stringify (asJson5: boolean, value: object): string {
 
 function generateFactory (unflattened: CompressedOptions): string {
   const mergedOptions = unflattened.reduceRight((prev: BabelOptions | null, options, index) => {
-    if (!prev) return Object.assign({}, options)
-
-    const plugins = (options.plugins || []).concat(prev.plugins || [])
-    const presets = (options.presets || []).concat(prev.presets || [])
-    return Object.assign({}, options, prev, {plugins, presets})
+    // TODO: Support `.babelrc.js` files.
+    return prev || options
   }, null)!
 
   const body = indentString(`return ${stringify(unflattened.json5, mergedOptions)}`, 2)

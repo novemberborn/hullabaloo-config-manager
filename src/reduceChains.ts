@@ -1,7 +1,7 @@
 import cloneDeepWith = require('lodash.clonedeepwith')
 import merge = require('lodash.merge')
 
-import BabelOptions, {ReducedOptions, PluginOrPresetDescriptor, PluginOrPresetList} from './BabelOptions'
+import BabelOptions, {PluginOrPresetDescriptor, PluginOrPresetList} from './BabelOptions'
 import Cache from './Cache'
 import {Chain, Chains} from './collector'
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
@@ -65,35 +65,51 @@ function trackSource (sourceMap: SourceMap, source: string, envName: string | nu
   })
 }
 
-function createOptions (plugins?: PluginOrPresetList, presets?: PluginOrPresetList): ReducedOptions {
-  const options: ReducedOptions = {}
-  if (plugins) options.plugins = plugins
-  // istanbul ignore else
-  if (presets) options.presets = presets
-  return options
+function normalizeOptions (options: BabelOptions): void {
+  // Always delete `babelrc`. Babel itself no longer needs to resolve this file.
+  delete options.babelrc
+
+  // Based on <https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/option-manager.js#L154:L171>.
+  // `extends` and `env` have already been removed, and removing `plugins` and
+  // `presets` is superfluous here.
+  delete options.passPerPreset
+  delete options.ignore
+  delete options.only
+
+  if (options.sourceMap) {
+    options.sourceMaps = options.sourceMap
+    delete options.sourceMap
+  }
 }
 
 export type CompressedOptions = BabelOptions[] & {json5: boolean}
 
 function compressOptions (orderedOptions: BabelOptions[], json5: boolean): CompressedOptions {
   const remaining = orderedOptions.slice(0, 1)
-  remaining[0].babelrc = false
+  const target = remaining[0]
+  target.babelrc = false
 
   for (let index = 1; index < orderedOptions.length; index++) {
     const options = orderedOptions[index]
-    delete options.babelrc
+    normalizeOptions(options)
 
     const plugins = options.plugins
     delete options.plugins
+    if (plugins) {
+      target.plugins = target.plugins
+        ? target.plugins.concat(plugins)
+        : plugins.slice()
+    }
 
     const presets = options.presets
     delete options.presets
-
-    merge(remaining[0], options)
-
-    if (plugins || presets) {
-      remaining.push(createOptions(plugins, presets))
+    if (presets) {
+      target.presets = target.presets
+        ? target.presets.concat(presets)
+        : presets.slice()
     }
+
+    merge(target, options)
   }
 
   return Object.assign(remaining, {json5})
