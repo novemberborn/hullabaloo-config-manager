@@ -65,7 +65,9 @@ otherwise hashes cannot be created for the config.
 The `json5` property can be set to `false` if the `options` object can be
 serialized using `JSON.stringify()`.
 
-Note that the `options` object is cloned (deeply) before use.
+Note that the `options` object is cloned (deeply) before use. Options are not
+validated to the same extend as when configuration files are loaded using
+`fromDirectory` or when the `extends` option is resolved.
 
 ### `fromConfig(baseConfig: Config, options?: {cache: Cache}): Promise<ResolvedConfig>`
 

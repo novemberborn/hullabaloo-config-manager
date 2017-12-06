@@ -21,35 +21,48 @@ test('fails when parsing invalid JSON5', async t => {
   t.is(err.source, fixture('bad-rc', 'invalid-json5', '.babelrc'))
 })
 
-test('fails when .babelrc is an array', async t => {
-  const err = await t.throws(collector.fromDirectory(fixture('bad-rc', 'array')))
+{
+  const fails = async (t, kind) => {
+    const err = await t.throws(collector.fromDirectory(fixture('bad-rc', kind)))
+    t.is(err.name, 'InvalidFileError')
+    t.is(err.source, fixture('bad-rc', kind, '.babelrc'))
+  }
+  fails.title = (title, kind) => `chain contains empty options when .babelrc is ${title || kind}`
+
+  test(fails, 'array')
+  test(fails, 'falsy')
+  test(fails, 'null')
+  test('not an object', fails, 'bool')
+}
+
+test('fails when both sourceMap and sourceMaps options are present', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-rc', 'conflicting-sourcemaps-option')))
   t.is(err.name, 'InvalidFileError')
-  t.is(err.source, fixture('bad-rc', 'array', '.babelrc'))
+  t.is(err.source, fixture('bad-rc', 'conflicting-sourcemaps-option', '.babelrc'))
 })
 
 {
-  const empty = async (t, kind) => {
-    const {defaultChain: [{options, source}]} = await collector.fromDirectory(fixture('bad-rc', kind))
-    t.deepEqual(options, {})
-    t.is(source, fixture('bad-rc', kind, '.babelrc'))
+  const invalid = async (t, option) => {
+    const err = await t.throws(collector.fromDirectory(fixture('bad-rc', `${option}-option`)))
+    t.is(err.name, 'InvalidFileError')
+    t.is(err.source, fixture('bad-rc', `${option}-option`, '.babelrc'))
   }
-  empty.title = (title, kind) => `chain contains empty options when .babelrc is ${title || kind}`
+  invalid.title = (desc, option) => `fails when ${desc || `${option} option`} is present`
 
-  test(empty, 'falsy')
-  test(empty, 'null')
-  test('not an object', empty, 'bool')
+  test(invalid, 'cwd')
+  test(invalid, 'filename')
+  test(invalid, 'filenameRelative')
+  test(invalid, 'babelrc')
+  test(invalid, 'code')
+  test(invalid, 'ast')
+  test(invalid, 'envName')
+  test('nested env option', invalid, 'nested-env')
 }
 
 test('fails when parsing invalid JSON', async t => {
   const err = await t.throws(collector.fromDirectory(fixture('bad-pkg', 'invalid-json')))
   t.is(err.name, 'ParseError')
   t.is(err.source, fixture('bad-pkg', 'invalid-json', 'package.json'))
-})
-
-test('fails when "babel" value in package.json is an array', async t => {
-  const err = await t.throws(collector.fromDirectory(fixture('bad-pkg', 'array')))
-  t.is(err.name, 'InvalidFileError')
-  t.is(err.source, fixture('bad-pkg', 'array', 'package.json'))
 })
 
 {
@@ -61,18 +74,19 @@ test('fails when "babel" value in package.json is an array', async t => {
   test(empty, 'falsy')
   test(empty, 'null')
   test('without a "babel" key', empty, 'without-babel')
+  test('with a "babel" value that is null', empty, 'null-babel')
 }
 
 {
-  const empty = async (t, kind) => {
-    const {defaultChain: [{options, source}]} = await collector.fromDirectory(fixture('bad-pkg', kind))
-    t.deepEqual(options, {})
-    t.is(source, fixture('bad-pkg', kind, 'package.json'))
+  const fail = async (t, kind) => {
+    const err = await t.throws(collector.fromDirectory(fixture('bad-pkg', kind)))
+    t.is(err.name, 'InvalidFileError')
+    t.is(err.source, fixture('bad-pkg', kind, 'package.json'))
   }
-  empty.title = (title, kind) => `chain contains empty options when package.json is ${title || kind}`
+  fail.title = (title, kind) => `fails when "babel" value in package.json is ${title}`
 
-  test('with a "babel" value that’s null', empty, 'null-babel')
-  test('with a "babel" value that’s not an object', empty, 'bool-babel')
+  test('an array', fail, 'array-babel')
+  test('truthy but not an object', fail, 'bool-babel')
 }
 
 test('fails when a directory contains .babelrc and package.json#babel', async t => {
@@ -105,17 +119,18 @@ test('fails when extending from an invalid file', async t => {
 })
 
 {
-  const empty = async (t, kind) => {
-    const {defaultChain: [{options, source}]} = await collector.fromConfig(createConfig({
+  const fail = async (t, kind) => {
+    const err = await t.throws(collector.fromConfig(createConfig({
       options: {extends: `${kind}/.babelrc`},
       source: fixture('bad-rc', 'source.js')
-    }))
-    t.deepEqual(options, {})
-    t.is(source, fixture('bad-rc', kind, '.babelrc'))
+    })))
+    t.is(err.name, 'InvalidFileError')
+    t.is(err.source, fixture('bad-rc', kind, '.babelrc'))
+    t.is(err.parent, null)
   }
-  empty.title = title => `chain contains empty options when extending from a ${title}`
+  fail.title = title => `fails when extending from a ${title}`
 
-  test('falsy file', empty, 'falsy')
-  test('null file', empty, 'null')
-  test('non-object file', empty, 'bool')
+  test('falsy file', fail, 'falsy')
+  test('null file', fail, 'null')
+  test('non-object file', fail, 'bool')
 }

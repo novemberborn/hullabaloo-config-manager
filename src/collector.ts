@@ -7,14 +7,33 @@ import Cache from './Cache'
 import {ExtendsError, InvalidFileError, MultipleSourcesError, NoSourceFileError, ParseError} from './errors'
 import readSafe from './readSafe'
 
+function has (obj: object, key: string) {
+  return Object.prototype.hasOwnProperty.call(obj, key)
+}
+
 function makeValid (source: string, options: any): BabelOptions {
-  // Arrays are never valid options.
+  if (!options) throw new InvalidFileError(source)
+  if (typeof options !== 'object') throw new InvalidFileError(source)
   if (Array.isArray(options)) throw new InvalidFileError(source)
 
-  // Force options to be an object. Babel itself ignores falsy values when
-  // resolving config chains. Here such files still need to be included
-  // for cache busting purposes.
-  if (!options || typeof options !== 'object') return {}
+  // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L251:L255
+  if (has(options, 'sourceMap') && has(options, 'sourceMaps')) throw new InvalidFileError(source)
+
+  // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L19:L36
+  if (has(options, 'cwd')) throw new InvalidFileError(source)
+  if (has(options, 'filename')) throw new InvalidFileError(source)
+  if (has(options, 'filenameRelative')) throw new InvalidFileError(source)
+  if (has(options, 'babelrc')) throw new InvalidFileError(source)
+  if (has(options, 'code')) throw new InvalidFileError(source)
+  if (has(options, 'ast')) throw new InvalidFileError(source)
+  if (has(options, 'envName')) throw new InvalidFileError(source)
+
+  if (has(options, 'env')) {
+    for (const envName in options.env) {
+      // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L216:L218
+      if (has(options.env[envName], 'env')) throw new InvalidFileError(source)
+    }
+  }
 
   return options
 }
@@ -34,7 +53,10 @@ function parsePackage (source: string, buffer: Buffer): BabelOptions | null {
   let options
   try {
     const pkg = JSON.parse(buffer.toString('utf8'))
-    if (!pkg || typeof pkg !== 'object' || !has(pkg, 'babel')) return null
+    // Babel assumes `pkg` is not `undefined` or `null`, and crashes otherwise.
+    // This logic is slightly more forgiving but that shouldn't make a read
+    // difference.
+    if (!pkg || typeof pkg !== 'object' || !has(pkg, 'babel') || !pkg.babel) return null
 
     options = pkg.babel
   } catch (err) {

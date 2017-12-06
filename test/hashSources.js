@@ -15,7 +15,7 @@ test('hashes file contents', async t => {
 test('hashes the "babel" value in package.json sources', async t => {
   const sources = [
     fixture('pkg', 'package.json'),
-    fixture('bad-pkg', 'array', 'package.json'),
+    fixture('bad-pkg', 'array-babel', 'package.json'),
     fixture('bad-pkg', 'bool-babel', 'package.json'),
     fixture('bad-pkg', 'falsy', 'package.json'),
     fixture('bad-pkg', 'null', 'package.json'),
