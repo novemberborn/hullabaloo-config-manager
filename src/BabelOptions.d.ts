@@ -9,36 +9,53 @@ declare interface ReducedOptions {
 }
 export {ReducedOptions, PluginOrPresetDescriptor, PluginOrPresetList}
 
-// From https://github.com/DefinitelyTyped/DefinitelyTyped/blob/99f93266bb31438c1d4c4e1ce82a3ce343c210c3/types/babel-core/index.d.ts
-// but without documentation or external type dependencies.
+// Based on <https://github.com/babel/babel/blob/fba19295b4e837fe7af782653fd3dd6480ba2edf/packages/babel-core/src/config/options.js>
+/* eslint-disable typescript/member-ordering */
 declare interface BabelOptions extends ReducedOptions {
-  ast?: boolean
-  auxiliaryCommentAfter?: string
-  auxiliaryCommentBefore?: string
-  code?: boolean
-  comments?: boolean
-  compact?: boolean | 'auto'
+  cwd?: string
   filename?: string
   filenameRelative?: string
-  generatorOpts?: object
-  highlightCode?: boolean
-  ignore?: string[]
-  inputSourceMap?: object
-  minified?: boolean
-  moduleId?: string
-  moduleIds?: boolean
-  moduleRoot?: string
-  only?: string | RegExp | Array<string | RegExp>
-  parserOpts?: object
+  code?: boolean
+  ast?: boolean
+  inputSourceMap?: object | boolean
+  envName?: string
+
+  ignore?: Array<string | Function | RegExp>
+  only?: Array<string | Function | RegExp>
+
+  passPerPreset?: boolean
+
+  // Options for @babel/generator
   retainLines?: boolean
-  sourceFileName?: string
-  sourceMaps?: boolean | 'inline' | 'both'
-  sourceMapTarget?: string
-  sourceRoot?: string
-  sourceType?: 'script' | 'module'
-  getModuleId?(moduleName: string): string
-  resolveModuleSource?(source: string, filename: string): string
+  comments?: boolean
   shouldPrintComment?(comment: string): boolean
+  compact?: boolean | 'auto'
+  minified?: boolean
+  auxiliaryCommentBefore?: string
+  auxiliaryCommentAfter?: string
+
+  // Parser
+  sourceType?: 'module' | 'script' | 'unambiguous'
+
   wrapPluginVisitorMethod?(pluginAlias: string, visitorType: 'enter' | 'exit', callback: (path: object, state: any) => void): (path: object, state: any) => void // eslint-disable-line max-len
+  highlightCode?: boolean
+
+  // Sourcemap generation options.
+  sourceMaps?: boolean | 'inline' | 'both'
+  sourceMap?: boolean | 'inline' | 'both'
+  sourceMapTarget?: string
+  sourceFileName?: string
+  sourceRoot?: string
+
+  // AMD/UMD/SystemJS module naming options.
+  getModuleId?(moduleName: string): string
+  moduleRoot?: string
+  moduleIds?: boolean
+  moduleId?: string
+
+  // Deprecate top level parserOpts
+  parserOpts?: object
+  // Deprecate top level generatorOpts
+  generatorOpts?: object
 }
 export default BabelOptions
