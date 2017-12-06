@@ -57,11 +57,7 @@ test('createConfig() can take a fixed hash for the options', async t => {
 test('createConfig() copies options to prevent modification of original input', async t => {
   const options = {
     env: {
-      foo: {
-        env: {
-          bar: {}
-        }
-      }
+      foo: {}
     }
   }
 
@@ -71,11 +67,7 @@ test('createConfig() copies options to prevent modification of original input', 
   }))
   t.deepEqual(options, {
     env: {
-      foo: {
-        env: {
-          bar: {}
-        }
-      }
+      foo: {}
     }
   })
 })
