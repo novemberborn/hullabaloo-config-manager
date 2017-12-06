@@ -54,18 +54,33 @@ test('fails when "babel" value in package.json is an array', async t => {
 
 {
   const empty = async (t, kind) => {
+    t.is(await collector.fromDirectory(fixture('bad-pkg', kind)), null)
+  }
+  empty.title = (title, kind) => `no chain when package.json is ${title || kind}`
+
+  test(empty, 'falsy')
+  test(empty, 'null')
+  test('without a "babel" key', empty, 'without-babel')
+}
+
+{
+  const empty = async (t, kind) => {
     const {defaultChain: [{options, source}]} = await collector.fromDirectory(fixture('bad-pkg', kind))
     t.deepEqual(options, {})
     t.is(source, fixture('bad-pkg', kind, 'package.json'))
   }
   empty.title = (title, kind) => `chain contains empty options when package.json is ${title || kind}`
 
-  test(empty, 'falsy')
-  test(empty, 'null')
-  test('without a "babel" key', empty, 'without-babel')
-  test('without a "babel" value that’s null', empty, 'null-babel')
-  test('without a "babel" value that’s not an object', empty, 'bool-babel')
+  test('with a "babel" value that’s null', empty, 'null-babel')
+  test('with a "babel" value that’s not an object', empty, 'bool-babel')
 }
+
+test('fails when a directory contains .babelrc and package.json#babel', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('multiple-sources', 'babelrc-and-pkg')))
+  t.is(err.name, 'MultipleSourcesError')
+  t.is(err.source, fixture('multiple-sources', 'babelrc-and-pkg', '.babelrc'))
+  t.is(err.otherSource, fixture('multiple-sources', 'babelrc-and-pkg', 'package.json'))
+})
 
 test('fails when extending from a non-existent file', async t => {
   const err = await t.throws(collector.fromConfig(createConfig({

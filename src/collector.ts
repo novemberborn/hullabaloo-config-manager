@@ -4,7 +4,7 @@ import json5 = require('json5')
 
 import BabelOptions, {ReducedOptions} from './BabelOptions'
 import Cache from './Cache'
-import {ExtendsError, InvalidFileError, NoSourceFileError, ParseError} from './errors'
+import {ExtendsError, InvalidFileError, MultipleSourcesError, NoSourceFileError, ParseError} from './errors'
 import readSafe from './readSafe'
 
 function makeValid (source: string, options: any): BabelOptions {
@@ -30,11 +30,13 @@ function parseFile (source: string, buffer: Buffer): BabelOptions {
   return makeValid(source, options)
 }
 
-function parsePackage (source: string, buffer: Buffer): BabelOptions {
+function parsePackage (source: string, buffer: Buffer): BabelOptions | null {
   let options
   try {
     const pkg = JSON.parse(buffer.toString('utf8'))
-    options = pkg && pkg.babel
+    if (!pkg || typeof pkg !== 'object' || !has(pkg, 'babel')) return null
+
+    options = pkg.babel
   } catch (err) {
     throw new ParseError(source, err)
   }
@@ -113,22 +115,44 @@ async function resolveDirectory (dir: string, cache?: Cache): Promise<Config | n
   const fileSource = path.join(dir, '.babelrc')
   const packageSource = path.join(dir, 'package.json')
 
+  type Options = BabelOptions | null
+  interface Result {
+    json5: boolean
+    source: string
+    parse(): Options
+  }
+
   // Attempt to read file and package concurrently. Neither may exist, and
   // that's OK.
-  const fromFile = readSafe(fileSource, cache).then(contents => contents && {
+  const fromFile = readSafe(fileSource, cache).then<Result | null>(contents => contents && {
     json5: true,
     parse () { return parseFile(fileSource, contents) },
     source: fileSource
   })
 
-  const fromPackage = readSafe(packageSource, cache).then(contents => contents && {
+  const fromPackage = readSafe(packageSource, cache).then<Result | null>(contents => contents && {
     json5: false,
     parse () { return parsePackage(packageSource, contents) },
     source: packageSource
   })
 
-  const result = (await fromFile) || (await fromPackage)
-  return result && new Config(dir, null, null, result.json5, result.parse(), result.source)
+  let result = await fromFile
+  let options: Options = null
+  if (result) {
+    const packageResult = await fromPackage
+    if (packageResult && packageResult.parse() !== null) {
+      throw new MultipleSourcesError(fileSource, packageSource)
+    }
+
+    options = result.parse()
+  } else {
+    result = await fromPackage
+    if (result) {
+      options = result.parse()
+    }
+  }
+
+  return result && options && new Config(dir, null, null, result.json5, options, result.source)
 }
 
 async function resolveFile (source: string, cache?: Cache): Promise<Config> {
