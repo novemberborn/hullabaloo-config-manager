@@ -1,7 +1,7 @@
 import cloneDeepWith = require('lodash.clonedeepwith')
 import merge = require('lodash.merge')
 
-import BabelOptions, {PluginOrPresetDescriptor, PluginOrPresetList} from './BabelOptions'
+import BabelOptions, {PluginOrPresetItem, PluginOrPresetList} from './BabelOptions'
 import Cache from './Cache'
 import {Chain, Chains} from './collector'
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
@@ -115,25 +115,38 @@ function compressOptions (orderedOptions: BabelOptions[], json5: boolean): Compr
   return Object.assign(remaining, {json5})
 }
 
+function mapPluginOrPresetTarget (
+  envName: string | null,
+  dependencyMap: DependencyMap,
+  getEntry: (ref: string) => Entry,
+  target: string
+): string {
+  const entry = getEntry(target)
+  trackDependency(dependencyMap, entry.filename, entry.fromPackage, envName)
+  return entry.filename
+}
+
 function mapPluginOrPreset (
   envName: string | null,
   dependencyMap: DependencyMap,
   getEntry: (ref: string) => Entry,
-  ref: PluginOrPresetDescriptor
-): string | [string, any] | [string, any, string] {
-  if (Array.isArray(ref)) {
-    const filename = mapPluginOrPreset(envName, dependencyMap, getEntry, ref[0]) as string
+  item: PluginOrPresetItem
+): PluginOrPresetItem {
+  if (Array.isArray(item)) {
+    const target = item[0]
+    if (typeof target !== 'string') return item
 
-    switch (ref.length) {
+    const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, target)
+    switch (item.length) {
       case 1: return filename
-      case 2: return [filename, ref[1]]
-      default: return [filename, ref[1], ref[2]]
+      case 2: return [filename, item[1]]
+      default: return [filename, item[1], item[2]]
     }
   }
 
-  const entry = getEntry(ref)
-  trackDependency(dependencyMap, entry.filename, entry.fromPackage, envName)
-  return entry.filename
+  return typeof item === 'string'
+    ? mapPluginOrPresetTarget(envName, dependencyMap, getEntry, item)
+    : item
 }
 
 function reduceOptions (
@@ -162,7 +175,7 @@ function reduceOptions (
       if (object === config.options && (key === 'plugins' || key === 'presets')) {
         const getEntry = (ref: string) => lookup[key].get(ref)!
         return Array.isArray(value)
-          ? (value as PluginOrPresetList).map(ref => mapPluginOrPreset(envName, dependencyMap, getEntry, ref))
+          ? (value as PluginOrPresetList).map(item => mapPluginOrPreset(envName, dependencyMap, getEntry, item))
           : []
       }
 
