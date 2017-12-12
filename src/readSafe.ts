@@ -3,7 +3,7 @@ import gfs = require('graceful-fs')
 import Cache from './Cache'
 
 export default function readSafe (source: string, cache?: Cache): Promise<Buffer | null> {
-  if (cache && cache.files && cache.files.has(source)) {
+  if (cache && cache.files.has(source)) {
     return cache.files.get(source)!
   }
 
@@ -21,7 +21,7 @@ export default function readSafe (source: string, cache?: Cache): Promise<Buffer
     })
   })
 
-  if (cache && cache.files) {
+  if (cache) {
     cache.files.set(source, promise)
   }
   return promise

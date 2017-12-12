@@ -5,7 +5,7 @@ import isMatch from 'lodash.ismatch'
 import proxyquire from 'proxyquire'
 import td from 'testdouble'
 
-import {createConfig} from '..'
+import {createConfig, prepareCache} from '..'
 import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
@@ -473,9 +473,7 @@ test('a cache can be used for file access', async t => {
     })
   })
 
-  const sharedCache = {
-    files: new Map()
-  }
+  const sharedCache = prepareCache()
 
   await Promise.all([
     fromDirectory(fixture('complex-env'), sharedCache),

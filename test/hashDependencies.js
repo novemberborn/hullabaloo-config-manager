@@ -5,6 +5,7 @@ import test from 'ava'
 import md5Hex from 'md5-hex'
 import packageHash from 'package-hash'
 
+import {prepareCache} from '..'
 import hashDependencies from '../build/hashDependencies'
 import fixture from './helpers/fixture'
 
@@ -50,9 +51,8 @@ test('fails when dependency file does not exist', async t => {
 
 test('can use a cache of computed hashes', async t => {
   const filename = fixture('precomputed.js')
-  const cache = {
-    dependencyHashes: new Map([[filename, Promise.resolve('hash')]])
-  }
+  const cache = prepareCache()
+  cache.dependencyHashes.set(filename, Promise.resolve('hash'))
 
   const hashed = await hashDependencies([
     {filename, fromPackage: null}
@@ -63,9 +63,7 @@ test('can use a cache of computed hashes', async t => {
 test('caches new hashes', async t => {
   const fromPackage = fixture('compare', 'node_modules', 'plugin')
   const filename = path.join(fromPackage, 'index.js')
-  const cache = {
-    dependencyHashes: new Map()
-  }
+  const cache = prepareCache()
 
   const hashed = await hashDependencies([
     {filename, fromPackage}
@@ -77,9 +75,8 @@ test('caches new hashes', async t => {
 test('can use a cache for file access', async t => {
   const filename = fixture('cached-access')
   const contents = Buffer.from('cached')
-  const cache = {
-    files: new Map([[filename, Promise.resolve(contents)]])
-  }
+  const cache = prepareCache()
+  cache.files.set(filename, Promise.resolve(contents))
 
   const hashed = await hashDependencies([
     {filename, fromPackage: null}

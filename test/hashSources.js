@@ -3,6 +3,7 @@ import fs from 'fs'
 import test from 'ava'
 import md5Hex from 'md5-hex'
 
+import {prepareCache} from '..'
 import hashSources from '../build/hashSources'
 import fixture from './helpers/fixture'
 
@@ -59,9 +60,8 @@ test('can use a map of fixed hashes', async t => {
 
 test('can use a cache of computed hashes', async t => {
   const source = fixture('precomputed')
-  const cache = {
-    sourceHashes: new Map([[source, Promise.resolve('hash')]])
-  }
+  const cache = prepareCache()
+  cache.sourceHashes.set(source, Promise.resolve('hash'))
 
   const hashed = await hashSources([{source}], null, cache)
   t.deepEqual(hashed, ['hash'])
@@ -69,9 +69,7 @@ test('can use a cache of computed hashes', async t => {
 
 test('caches new hashes', async t => {
   const source = fixture('babelrc', '.babelrc')
-  const cache = {
-    sourceHashes: new Map()
-  }
+  const cache = prepareCache()
 
   const hashed = await hashSources([{source}], null, cache)
   const fromCache = await cache.sourceHashes.get(source)
@@ -81,9 +79,8 @@ test('caches new hashes', async t => {
 test('can use a cache for file access', async t => {
   const source = fixture('cached-access')
   const contents = Buffer.from('cached')
-  const cache = {
-    files: new Map([[source, Promise.resolve(contents)]])
-  }
+  const cache = prepareCache()
+  cache.files.set(source, Promise.resolve(contents))
 
   const hashed = await hashSources([{source}], null, cache)
   t.deepEqual(hashed, [md5Hex(contents)])
