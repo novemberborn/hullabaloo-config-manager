@@ -1,5 +1,12 @@
-declare type PluginOrPresetDescriptor = string | [string] | [string, any] | [string, any, string]
-declare type PluginOrPresetList = Array<PluginOrPresetDescriptor>
+declare type PluginOrPresetOptions = object | void | false
+declare type PluginOrPresetTarget = string | object | Function
+declare type PluginOrPresetItem = PluginOrPresetTarget
+  | [PluginOrPresetTarget]
+  | [PluginOrPresetTarget, PluginOrPresetOptions]
+  | [PluginOrPresetTarget, PluginOrPresetOptions, string]
+declare type PluginOrPresetList = Array<PluginOrPresetItem>
+export {PluginOrPresetOptions, PluginOrPresetTarget, PluginOrPresetItem, PluginOrPresetList}
+
 declare interface ReducedOptions {
   babelrc?: boolean
   env?: {[name: string]: ReducedOptions}
@@ -7,7 +14,7 @@ declare interface ReducedOptions {
   plugins?: PluginOrPresetList
   presets?: PluginOrPresetList
 }
-export {ReducedOptions, PluginOrPresetDescriptor, PluginOrPresetList}
+export {ReducedOptions}
 
 // Based on <https://github.com/babel/babel/blob/fba19295b4e837fe7af782653fd3dd6480ba2edf/packages/babel-core/src/config/options.js>
 /* eslint-disable typescript/member-ordering */

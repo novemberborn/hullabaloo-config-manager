@@ -231,6 +231,48 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
   })
 }
 
+{
+  const pluginTarget = {[Symbol('plugin')]: true}
+  const presetTarget = {[Symbol('preset')]: true}
+  test('passes object and function values for plugin and preset targets as-is', reduces, [
+    {
+      json5: false,
+      options: {
+        plugins: [
+          pluginTarget,
+          [pluginTarget],
+          [pluginTarget, {}],
+          [pluginTarget, {}, 'name']
+        ],
+        presets: [
+          presetTarget,
+          [presetTarget],
+          [presetTarget, {}],
+          [presetTarget, {}, 'name']
+        ]
+      }
+    }
+  ], new Map(), {
+    unflattenedDefaultOptions: Object.assign([
+      {
+        babelrc: false,
+        plugins: [
+          pluginTarget,
+          [pluginTarget],
+          [pluginTarget, {}],
+          [pluginTarget, {}, 'name']
+        ],
+        presets: [
+          presetTarget,
+          [presetTarget],
+          [presetTarget, {}],
+          [presetTarget, {}, 'name']
+        ]
+      }
+    ], {json5: false})
+  })
+}
+
 test('collects fixed source hashes', reduces, [
   {
     options: {},

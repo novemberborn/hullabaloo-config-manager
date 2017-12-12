@@ -187,6 +187,22 @@ import pkgDirMock from './helpers/pkgDirMock'
     test('resolves multiple configs in a chain', resolves, [[first, second]], expected)
     test('resolves multiple chains', resolves, [[first], [second]], expected)
   }
+
+  {
+    const config = {
+      options: {
+        plugins: [{}],
+        presets: [{}]
+      },
+      dir: path.resolve('my-configs')
+    }
+    test('ignores non-string targets', resolves, [[config]], new Map([
+      [config, {
+        plugins: new Map(),
+        presets: new Map()
+      }]
+    ]))
+  }
 }
 
 test('caches results', t => {

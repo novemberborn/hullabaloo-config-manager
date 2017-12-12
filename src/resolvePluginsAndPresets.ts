@@ -120,11 +120,11 @@ export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: 
         }
       }
 
-      for (const ref of normalize(config.options.plugins)) {
-        resolve(Kind.PLUGIN, ref)
+      for (const target of normalize(config.options.plugins)) {
+        if (typeof target === 'string') resolve(Kind.PLUGIN, target)
       }
-      for (const ref of normalize(config.options.presets)) {
-        resolve(Kind.PRESET, ref)
+      for (const target of normalize(config.options.presets)) {
+        if (typeof target === 'string') resolve(Kind.PRESET, target)
       }
     }
   }
