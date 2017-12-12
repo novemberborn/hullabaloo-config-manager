@@ -18,11 +18,7 @@ test('stringifies using JSON5 unless chain is marked otherwise', async t => {
   }))
   const code = codegen(reduceChains(chains))
 
-  t.true(code.includes(`const defaultOptions = () => {
-  return {
-    "babelrc": false
-  }
-}`))
+  t.true(code.includes('"babelrc": false'))
 })
 
 test('by default stringifies using JSON5', async t => {
@@ -32,11 +28,7 @@ test('by default stringifies using JSON5', async t => {
   }))
   const code = codegen(reduceChains(chains))
 
-  t.true(code.includes(`const defaultOptions = () => {
-  return {
-    babelrc: false
-  }
-}`))
+  t.true(code.includes('babelrc: false'))
 })
 
 test('generates a nicely indented module', async t => {
@@ -58,8 +50,8 @@ test('generates a nicely indented module', async t => {
 
 const process = require("process")
 
-const defaultOptions = () => {
-  return {
+const defaultOptions = envName => {
+  return Object.assign({
     plugins: [
       [
         ${modulePath('plugin')},
@@ -79,13 +71,13 @@ const defaultOptions = () => {
       ]
     ],
     babelrc: false
-  }
+  }, {envName})
 }
 
 const envOptions = Object.create(null)
 
-envOptions["foo"] = () => {
-  return {
+envOptions["foo"] = envName => {
+  return Object.assign({
     plugins: [
       [
         ${modulePath('plugin')},
@@ -119,14 +111,16 @@ envOptions["foo"] = () => {
       ]
     ],
     babelrc: false
-  }
+  }, {envName})
 }
 
-exports.getOptions = () => {
-  const envName = process.env.BABEL_ENV || process.env.NODE_ENV || "development"
+exports.getOptions = envName => {
+  if (typeof envName !== "string") {
+    envName = process.env.BABEL_ENV || process.env.NODE_ENV || "development"
+  }
   return envName in envOptions
-    ? envOptions[envName]()
-    : defaultOptions()
+    ? envOptions[envName](envName)
+    : defaultOptions(envName)
 }
 `)
 })

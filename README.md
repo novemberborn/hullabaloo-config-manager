@@ -105,7 +105,8 @@ has already been extended.
 
 ### `BabelOptions`
 
-See <https://babeljs.io/docs/usage/api/#options>.
+See <https://babeljs.io/docs/usage/api/#options>. **Note that the `envName`
+option must not be provided**.
 
 ---
 
@@ -120,6 +121,11 @@ function. This function returns a unique options object, applicable for the
 current environment, that can be passed to `@babel/core` methods.
 
 This module needs to evaluated before the `getOptions()` method can be accessed.
+
+An environment name can be provided when calling `getOptions()`, e.g.
+`getOptions('production')`. If no name is provided, or the name is not a string,
+the environment is determined by checking `process.env.BABEL_ENV`,
+`process.env.NODE_ENV`, and finally defaulting to `'development'`.
 
 #### `ResolvedConfig#createVerifier(): Promise<Verifier>`
 

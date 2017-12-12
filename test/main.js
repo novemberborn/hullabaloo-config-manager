@@ -34,6 +34,7 @@ test('createConfig() allows dir to be specified separately from source', async t
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   t.deepEqual(configModule.getOptions(), {
     babelrc: false,
+    envName: 'test',
     plugins: [pluginIndex]
   })
 })
@@ -100,6 +101,11 @@ test('createConfig() throws if \'options\' option is an array', t => {
 test('createConfig() throws if \'options\' option is not an object', t => {
   const err = t.throws(() => createConfig({options: 'str', source: 'foo'}), TypeError)
   t.is(err.message, "'options' must be an actual object")
+})
+
+test('createConfig() throws if \'options\' option has an \'envName\' property', t => {
+  const err = t.throws(() => createConfig({options: {envName: ''}, source: 'foo'}), TypeError)
+  t.is(err.message, "'options' must not have an 'envName' property")
 })
 
 test('currentEnv() returns BABEL_ENV, if set', t => {
@@ -174,6 +180,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
       ]
     ],
     babelrc: false,
+    envName: 'development',
     sourceMaps: false
   })
 
@@ -243,6 +250,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
       ]
     ],
     babelrc: false,
+    envName: 'foo',
     sourceMaps: false
   })
 })
@@ -340,6 +348,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
       ]
     ],
     babelrc: false,
+    envName: 'development',
     sourceMaps: true
   })
 
@@ -477,6 +486,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
       ]
     ],
     babelrc: false,
+    envName: 'foo',
     sourceMaps: true
   })
 })
