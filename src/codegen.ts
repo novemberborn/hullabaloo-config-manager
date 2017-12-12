@@ -17,8 +17,8 @@ function generateFactory (unflattened: CompressedOptions): string {
     return prev || options
   }, null)!
 
-  const body = indentString(`return ${stringify(unflattened.json5, mergedOptions)}`, 2)
-  return `() => {\n${body}\n}`
+  const body = indentString(`return Object.assign(${stringify(unflattened.json5, mergedOptions)}, {envName})`, 2)
+  return `envName => {\n${body}\n}`
 }
 
 export default function codegen (resolvedConfig: ResolvedConfig): string {
@@ -33,11 +33,13 @@ const process = require("process")\n`]
     code.push(`envOptions[${JSON.stringify(envName)}] = ${generateFactory(unflattened)}\n`)
   }
 
-  code.push(`exports.getOptions = () => {
-  const envName = process.env.BABEL_ENV || process.env.NODE_ENV || "development"
+  code.push(`exports.getOptions = envName => {
+  if (typeof envName !== "string") {
+    envName = process.env.BABEL_ENV || process.env.NODE_ENV || "development"
+  }
   return envName in envOptions
-    ? envOptions[envName]()
-    : defaultOptions()
+    ? envOptions[envName](envName)
+    : defaultOptions(envName)
 }\n`)
 
   return code.join('\n')

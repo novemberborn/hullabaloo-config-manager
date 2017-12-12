@@ -32,11 +32,12 @@ function transformChain (computedOptions) {
   return [runInNewContext(code), map]
 }
 
-function transformBabel () {
+function transformBabel (envName) {
   const {code, map} = transform('[]', {
     babelrc: true,
     extends: source,
-    filename: source
+    filename: source,
+    envName
   })
   return [runInNewContext(code), map]
 }
@@ -54,4 +55,8 @@ test('resolved config matches @babel/core', async t => {
   setBabelEnv()
   setNodeEnv('foo')
   t.deepEqual(transformChain(configModule.getOptions()), transformBabel(), 'no BABEL_ENV, NODE_ENV=foo')
+
+  setBabelEnv()
+  setNodeEnv()
+  t.deepEqual(transformChain(configModule.getOptions('foo')), transformBabel('foo'), 'explicit envName')
 })

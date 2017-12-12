@@ -37,6 +37,10 @@ export function createConfig (options: CreateOptions): collector.Config {
   const json5 = options.json5 !== false
   const babelOptions = cloneDeep(options.options)
 
+  if (Object.prototype.hasOwnProperty.call(babelOptions, 'envName')) {
+    throw new TypeError("'options' must not have an 'envName' property")
+  }
+
   return new collector.Config(dir, null, hash, json5, babelOptions, source)
 }
 
