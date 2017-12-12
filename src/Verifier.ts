@@ -11,7 +11,7 @@ import hashSources from './hashSources'
 import {Dependency, Source} from './reduceChains'
 
 function ensureMissingBabelrcFile (file: string, cache?: Cache): Promise<boolean> {
-  if (cache && cache.fileExistence && cache.fileExistence.has(file)) {
+  if (cache && cache.fileExistence.has(file)) {
     return cache.fileExistence.get(file)!
   }
 
@@ -29,7 +29,7 @@ function ensureMissingBabelrcFile (file: string, cache?: Cache): Promise<boolean
     })
   })
 
-  if (cache && cache.fileExistence) {
+  if (cache) {
     cache.fileExistence.set(file, promise)
   }
   return promise

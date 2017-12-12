@@ -9,7 +9,7 @@ import readSafe from './readSafe'
 import {Source} from './reduceChains'
 
 function hashSource (source: string, cache?: Cache): Promise<string> {
-  if (cache && cache.sourceHashes && cache.sourceHashes.has(source)) {
+  if (cache && cache.sourceHashes.has(source)) {
     return cache.sourceHashes.get(source)!
   }
 
@@ -35,7 +35,7 @@ function hashSource (source: string, cache?: Cache): Promise<string> {
       return md5Hex(JSON.stringify(value))
     })
 
-  if (cache && cache.sourceHashes) {
+  if (cache) {
     cache.sourceHashes.set(source, promise)
   }
   return promise

@@ -86,7 +86,9 @@ export type ResolutionMap = Map<Config, {
 }>
 
 export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: Cache): ResolutionMap {
-  const dirCaches: PluginsAndPresetsMap = (sharedCache && sharedCache.pluginsAndPresets) || new Map()
+  const dirCaches: PluginsAndPresetsMap = sharedCache
+    ? sharedCache.pluginsAndPresets
+    : new Map()
   const getCache = (dir: string): PluginsAndPresetsMapValue => {
     if (dirCaches.has(dir)) return dirCaches.get(dir)!
 

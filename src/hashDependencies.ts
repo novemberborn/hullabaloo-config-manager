@@ -22,7 +22,7 @@ async function hashPackage (filename: string, fromPackage: string): Promise<stri
 }
 
 function hashDependency (filename: string, fromPackage: string | null, cache?: Cache): Promise<string> {
-  if (cache && cache.dependencyHashes && cache.dependencyHashes.has(filename)) {
+  if (cache && cache.dependencyHashes.has(filename)) {
     return cache.dependencyHashes.get(filename)!
   }
 
@@ -30,7 +30,7 @@ function hashDependency (filename: string, fromPackage: string | null, cache?: C
     ? hashPackage(filename, fromPackage)
     : hashFile(filename, cache)
 
-  if (cache && cache.dependencyHashes) {
+  if (cache) {
     cache.dependencyHashes.set(filename, promise)
   }
   return promise
