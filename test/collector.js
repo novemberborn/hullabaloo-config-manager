@@ -1,7 +1,6 @@
 import fs from 'fs'
 
 import test from 'ava'
-import isMatch from 'lodash.ismatch'
 import proxyquire from 'proxyquire'
 import td from 'testdouble'
 
@@ -10,13 +9,27 @@ import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
 const compare = async (t, resolveChains, expected) => {
-  const actual = (await resolveChains()).defaultChain
-  t.true(isMatch(actual, expected))
+  const pairs = Array.from((await resolveChains()).defaultChain, (config, index) => [config, expected[index]])
+
+  let index = 0
+  for (const [config, expectedConfig] of pairs) {
+    for (const prop of Object.keys(expectedConfig)) {
+      t.deepEqual(config[prop], expectedConfig[prop], `${index}.${prop}`)
+    }
+    index++
+  }
 }
 
 const compareEnv = async (t, resolveChains, env, expected) => {
-  const actual = (await resolveChains()).envChains.get(env)
-  t.true(isMatch(actual, expected))
+  const pairs = Array.from((await resolveChains()).envChains.get(env), (config, index) => [config, expected[index]])
+
+  let index = 0
+  for (const [config, expectedConfig] of pairs) {
+    for (const prop of Object.keys(expectedConfig)) {
+      t.deepEqual(config[prop], expectedConfig[prop], `${index}.${prop}`)
+    }
+    index++
+  }
 }
 
 {
@@ -28,7 +41,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     .map(dir => fixture('babel-config-chain', dir))
     .map(expanded => () => collector.fromDirectory(expanded))
 
-  test('babel-config-chain: root', compare, root, new Set([
+  test('babel-config-chain: root', compare, root, [
     {
       options: {
         plugins: ['extended']
@@ -41,36 +54,36 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('babel-config-chain', '.babelrc')
     }
-  ]))
+  ])
 
-  test('babel-config-chain: dir2', compare, dir2, new Set([
+  test('babel-config-chain: dir2', compare, dir2, [
     {
       options: {
         plugins: ['dir2']
       },
       source: fixture('babel-config-chain', 'dir2', '.babelrc')
     }
-  ]))
+  ])
 
-  test('babel-config-chain: pkg', compare, pkg, new Set([
+  test('babel-config-chain: pkg', compare, pkg, [
     {
       options: {
         plugins: ['pkg-plugin']
       },
       source: fixture('babel-config-chain', 'pkg', 'package.json')
     }
-  ]))
+  ])
 
-  test('babel-config-chain: env - base', compare, env, new Set([
+  test('babel-config-chain: env - base', compare, env, [
     {
       options: {
         plugins: ['env-base']
       },
       source: fixture('babel-config-chain', 'env', '.babelrc')
     }
-  ]))
+  ])
 
-  test('babel-config-chain: env - foo', compareEnv, env, 'foo', new Set([
+  test('babel-config-chain: env - foo', compareEnv, env, 'foo', [
     {
       options: {
         plugins: ['env-base']
@@ -83,9 +96,9 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('babel-config-chain', 'env', '.babelrc')
     }
-  ]))
+  ])
 
-  test('babel-config-chain: env - bar', compareEnv, env, 'bar', new Set([
+  test('babel-config-chain: env - bar', compareEnv, env, 'bar', [
     {
       options: {
         plugins: ['env-base']
@@ -98,7 +111,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('babel-config-chain', 'env', '.babelrc')
     }
-  ]))
+  ])
 }
 
 {
@@ -118,7 +131,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     source: fixture('babelrc', 'source.js')
   }))
 
-  test('fromConfig() with .babelrc', compare, babelrc, new Set([
+  test('fromConfig() with .babelrc', compare, babelrc, [
     {
       options: {
         plugins: ['babelrc']
@@ -133,9 +146,9 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       source: fixture('babelrc', 'source.js'),
       json5: true
     }
-  ]))
+  ])
 
-  test('fromConfig() with package.json', compare, pkg, new Set([
+  test('fromConfig() with package.json', compare, pkg, [
     {
       options: {
         plugins: ['pkg']
@@ -150,9 +163,9 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       source: fixture('pkg', 'source.js'),
       json5: false
     }
-  ]))
+  ])
 
-  test('fromConfig() with babelrc lookup disabled', compare, disabled, new Set([
+  test('fromConfig() with babelrc lookup disabled', compare, disabled, [
     {
       options: {
         babelrc: false,
@@ -161,14 +174,14 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       source: fixture('babelrc', 'source.js'),
       json5: true
     }
-  ]))
+  ])
 }
 
 {
   const simpleCycle = () => collector.fromDirectory(fixture('cycles', 'simple'))
   const deepCycle = () => collector.fromDirectory(fixture('cycles', 'deep'))
 
-  test('simple cycle', compare, simpleCycle, new Set([
+  test('simple cycle', compare, simpleCycle, [
     {
       options: {
         plugins: ['extended']
@@ -181,9 +194,9 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('cycles', 'simple', '.babelrc')
     }
-  ]))
+  ])
 
-  test('deep cycle', compare, deepCycle, new Set([
+  test('deep cycle', compare, deepCycle, [
     {
       options: {
         plugins: ['extended-furthest']
@@ -202,7 +215,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('cycles', 'deep', '.babelrc')
     }
-  ]))
+  ])
 }
 
 {
@@ -210,14 +223,14 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     options: {plugins: ['created-config']},
     source: fixture('empty', 'source.js')
   }))
-  test('fromConfig() from empty directory', compare, empty, new Set([
+  test('fromConfig() from empty directory', compare, empty, [
     {
       options: {
         plugins: ['created-config']
       },
       source: fixture('empty', 'source.js')
     }
-  ]))
+  ])
 }
 
 {
@@ -226,7 +239,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     options: require(source), // eslint-disable-line import/no-dynamic-require
     source
   }))
-  test('includes configs but once', compare, repeats, new Set([
+  test('includes configs but once', compare, repeats, [
     {
       options: {
         plugins: ['babelrc']
@@ -235,16 +248,19 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     {
       options: {
-        plugins: ['created-config']
+        babelrc: true,
+        plugins: [
+          'virtual'
+        ]
       },
       source
     }
-  ]))
+  ])
 }
 
 {
   const complex = () => collector.fromDirectory(fixture('complex-env'))
-  test('resolves complex enviroment chains', compareEnv, complex, 'foo', new Set([
+  test('resolves complex enviroment chains', compareEnv, complex, 'foo', [
     {
       options: {
         plugins: ['extended-further']
@@ -287,7 +303,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: fixture('complex-env', '.babelrc')
     }
-  ]))
+  ])
 }
 
 {
@@ -298,7 +314,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     source: __filename
   }))
-  test('accepts absolute paths in extends clauses', compare, absExtends, new Set([
+  test('accepts absolute paths in extends clauses', compare, absExtends, [
     {
       options: {
         plugins: ['babelrc']
@@ -311,7 +327,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       },
       source: __filename
     }
-  ]))
+  ])
 }
 
 test('returns null when resolving a directory without configs', async t => {
@@ -361,26 +377,29 @@ test('with a created config, provides babelrcDir', async t => {
   base.extend(middle)
   middle.extend(root)
 
-  test('created configs can extend other created configs', compare, () => collector.fromConfig(base), new Set([
+  test('created configs can extend other created configs', compare, () => collector.fromConfig(base), [
     {
       options: {
+        babelrc: false,
         plugins: ['root']
       },
       source: 'root'
     },
     {
       options: {
+        babelrc: false,
         plugins: ['middle']
       },
       source: 'middle'
     },
     {
       options: {
+        babelrc: false,
         plugins: ['base']
       },
       source: 'base'
     }
-  ]))
+  ])
 }
 
 test('created configs cannot have an extend option and extend another created config', t => {
