@@ -1,9 +1,10 @@
-import cloneDeepWith = require('lodash.clonedeepwith')
 import merge = require('lodash.merge')
 
-import BabelOptions, {PluginOrPresetItem, PluginOrPresetList} from './BabelOptions'
+import BabelOptions, {PluginOrPresetItem} from './BabelOptions'
 import Cache from './Cache'
-import {Chain, Chains} from './collector'
+import cloneOptions from './cloneOptions'
+import {Chain, Chains, FileType} from './collector'
+import normalizeOptions from './normalizeOptions'
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
 
 export interface Dependency {
@@ -19,6 +20,7 @@ export interface Source {
   default: boolean
   envs: Set<string>
   hash?: string
+  runtimeHash: string | null
   source: string
 }
 type SourceMap = Map<string, Source>
@@ -47,7 +49,7 @@ function trackDependency (
   })
 }
 
-function trackSource (sourceMap: SourceMap, source: string, envName: string | null): void {
+function trackSource (sourceMap: SourceMap, source: string, runtimeHash: string | null, envName: string | null): void {
   if (sourceMap.has(source)) {
     const existing = sourceMap.get(source)!
     if (envName) {
@@ -61,58 +63,9 @@ function trackSource (sourceMap: SourceMap, source: string, envName: string | nu
   sourceMap.set(source, {
     default: !envName,
     envs: new Set(envName ? [envName] : []),
+    runtimeHash,
     source
   })
-}
-
-function normalizeOptions (options: BabelOptions): void {
-  // Always delete `babelrc`. Babel itself no longer needs to resolve this file.
-  delete options.babelrc
-
-  // Based on <https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/option-manager.js#L154:L171>.
-  // `extends` and `env` have already been removed, and removing `plugins` and
-  // `presets` is superfluous here.
-  delete options.passPerPreset
-  delete options.ignore
-  delete options.only
-
-  if (options.sourceMap) {
-    options.sourceMaps = options.sourceMap
-    delete options.sourceMap
-  }
-}
-
-export type CompressedOptions = BabelOptions[] & {json5: boolean}
-
-function compressOptions (orderedOptions: BabelOptions[], json5: boolean): CompressedOptions {
-  const remaining = orderedOptions.slice(0, 1)
-  const target = remaining[0]
-  target.babelrc = false
-
-  for (let index = 1; index < orderedOptions.length; index++) {
-    const options = orderedOptions[index]
-    normalizeOptions(options)
-
-    const plugins = options.plugins
-    delete options.plugins
-    if (plugins) {
-      target.plugins = target.plugins
-        ? target.plugins.concat(plugins)
-        : plugins.slice()
-    }
-
-    const presets = options.presets
-    delete options.presets
-    if (presets) {
-      target.presets = target.presets
-        ? target.presets.concat(presets)
-        : presets.slice()
-    }
-
-    merge(target, options)
-  }
-
-  return Object.assign(remaining, {json5})
 }
 
 function mapPluginOrPresetTarget (
@@ -149,41 +102,109 @@ function mapPluginOrPreset (
     : item
 }
 
-function reduceOptions (
+export interface MergedConfig {
+  fileType: FileType
+  options: BabelOptions
+}
+
+export interface ModuleConfig {
+  dir: string
+  envName: string | null
+  fileType: FileType.JS
+  source: string
+}
+
+export type ConfigList = Array<MergedConfig | ModuleConfig>
+
+export function isModuleConfig (object: MergedConfig | ModuleConfig): object is ModuleConfig {
+  return object.fileType === FileType.JS
+}
+
+function mergeChain (
   chain: Chain,
   envName: string | null,
   pluginsAndPresets: ResolutionMap,
   dependencyMap: DependencyMap,
   sourceMap: SourceMap,
   fixedSourceHashes: Map<string, string>
-): CompressedOptions {
-  let json5 = false
+): ConfigList {
+  const list: ConfigList = []
+  let tail: MergedConfig | null = null
 
-  const orderedOptions = Array.from(chain, config => {
-    trackSource(sourceMap, config.source, envName)
+  const queue = Array.from(chain, (config, index) => {
+    const options = cloneOptions(config.options)
+    const plugins = options.plugins
+    const presets = options.presets
+    delete options.plugins
+    delete options.presets
+    return {
+      config,
+      // The first config's options are not normalized.
+      options: index === 0 ? options : normalizeOptions(options),
+      plugins: Array.isArray(plugins) ? plugins : null,
+      presets: Array.isArray(presets) ? presets : null
+    }
+  })
+  for (const item of queue) {
+    const config = item.config
+    trackSource(sourceMap, config.source, config.runtimeHash, envName)
     if (config.hash) {
       fixedSourceHashes.set(config.source, config.hash)
     }
-
-    if (config.json5) json5 = true
 
     // When used properly, pluginsAndPresets *will* contain a lookup for
     // `config`. Don't handle situations where this is not the case. This is an
     // internal module after all.
     const lookup = pluginsAndPresets.get(config)!
-    return cloneDeepWith(config.options, (value, key, object) => {
-      if (object === config.options && (key === 'plugins' || key === 'presets')) {
-        const getEntry = (ref: string) => lookup[key].get(ref)!
-        return Array.isArray(value)
-          ? (value as PluginOrPresetList).map(item => mapPluginOrPreset(envName, dependencyMap, getEntry, item))
-          : []
+    const getPluginEntry = (ref: string) => lookup.plugins.get(ref)!
+    const getPresetEntry = (ref: string) => lookup.presets.get(ref)!
+
+    const plugins = item.plugins && item.plugins.map(plugin => mapPluginOrPreset(envName, dependencyMap, getPluginEntry, plugin))
+    const presets = item.presets && item.presets.map(preset => mapPluginOrPreset(envName, dependencyMap, getPresetEntry, preset))
+
+    if (config.fileType === FileType.JS) {
+      // Note that preparing `plugins` and `presets` has added them to
+      // `dependencyMap`. This will still be used when determining the
+      // configuration hash, even if the values are discarded.
+      list.push({
+        dir: config.dir,
+        envName: config.envName,
+        fileType: config.fileType,
+        source: config.source
+      })
+      tail = null
+    } else if (tail) {
+      if (plugins) {
+        tail.options.plugins = tail.options.plugins
+          ? tail.options.plugins.concat(plugins)
+          : plugins
       }
+      if (presets) {
+        tail.options.presets = tail.options.presets
+          ? tail.options.presets.concat(presets)
+          : presets
+      }
+      merge(tail.options, item.options)
 
-      return undefined
-    })
-  })
+      if (tail.fileType === FileType.JSON && config.fileType === FileType.JSON5) {
+        tail.fileType = config.fileType
+      }
+    } else {
+      if (plugins) {
+        item.options.plugins = plugins
+      }
+      if (presets) {
+        item.options.presets = presets
+      }
+      tail = {
+        fileType: config.fileType,
+        options: item.options
+      }
+      list.push(tail)
+    }
+  }
 
-  return compressOptions(orderedOptions, json5)
+  return list
 }
 
 function sortKeys (a: [string, any], b: [string, any]): -1 | 1 {
@@ -195,8 +216,8 @@ export interface ReducedChains {
   envNames: Set<string>
   fixedSourceHashes: Map<string, string>
   sources: Source[]
-  unflattenedDefaultOptions: CompressedOptions
-  unflattenedEnvOptions: Map<string, CompressedOptions>
+  unflattenedDefaultOptions: ConfigList
+  unflattenedEnvOptions: Map<string, ConfigList>
 }
 
 export default function reduceChains (chains: Chains, cache?: Cache): ReducedChains {
@@ -207,11 +228,11 @@ export default function reduceChains (chains: Chains, cache?: Cache): ReducedCha
   const fixedSourceHashes = new Map<string, string>()
   const sourceMap: SourceMap = new Map()
 
-  const unflattenedDefaultOptions = reduceOptions(
+  const unflattenedDefaultOptions = mergeChain(
     chains.defaultChain, null, pluginsAndPresets, dependencyMap, sourceMap, fixedSourceHashes
   )
 
-  const unflattenedEnvOptions = new Map<string, CompressedOptions>()
+  const unflattenedEnvOptions = new Map<string, ConfigList>()
   for (const pair of chains.envChains) {
     const envName = pair[0]
     const chain = pair[1]
@@ -219,7 +240,7 @@ export default function reduceChains (chains: Chains, cache?: Cache): ReducedCha
     envNames.add(envName)
     unflattenedEnvOptions.set(
       envName,
-      reduceOptions(chain, envName, pluginsAndPresets, dependencyMap, sourceMap, fixedSourceHashes)
+      mergeChain(chain, envName, pluginsAndPresets, dependencyMap, sourceMap, fixedSourceHashes)
     )
   }
 

@@ -1,5 +1,5 @@
 {
-  extends: './extended-by-babelrc.json5',
+  extends: './extended-by-babelrc.js',
   plugins: [
     ['module:plugin', {label: 'plugin@babelrc'}, 'plugin@babelrc']
   ],

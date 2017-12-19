@@ -41,7 +41,7 @@ const configManager = require('hullabaloo-config-manager')
 Returns the current environment value, just like `@babel/core` would determine
 it.
 
-### `fromDirectory(dir: string, options?: {cache: Cache}): Promise<ResolvedConfig | null>`
+### `fromDirectory(dir: string, options?: {cache?: Cache, expectedEnvNames?: string[]}): Promise<ResolvedConfig | null>`
 
 Asynchronously resolves config chains from the `dir` directory. If no config can
 be found the promise is resolved with `null`. Otherwise it is resolved with the
@@ -50,7 +50,11 @@ be found the promise is resolved with `null`. Otherwise it is resolved with the
 
 A `cache` object may be provided.
 
-### `createConfig(options: {options: BabelOptions, source: string, dir?: string, hash?: string, json5?: false}): Config`
+Provide `expectedEnvNames` when the config chain may contain JavaScript sources
+(such as `.babelrc.js` files). You must specify all environment names you want
+to use with the resolved config. Defaults to `[currentEnv()]`.
+
+### `createConfig(options: {options: BabelOptions, source: string, dir?: string, hash?: string, fileType?: 'JSON' | 'JSON5'}): Config`
 
 Creates and returns an in-memory [config object](#config). The first argument
 must be provided, and it must have a valid [`options` object](#babeloptions) and
@@ -62,12 +66,12 @@ Dependencies are resolved relative to this `dir`.
 If the config source does not exist on disk the `hash` value should be provided,
 otherwise hashes cannot be created for the config.
 
-The `json5` property can be set to `false` if the `options` object can be
-serialized using `JSON.stringify()`.
+The `fileType` property can be set to `JSON` if the `options` object can be
+serialized using `JSON.stringify()`. It defaults to `JSON5`.
 
-Note that the `options` object is cloned (deeply) before use. Options are not
-validated to the same extend as when configuration files are loaded using
-`fromDirectory` or when the `extends` option is resolved.
+Note that the `options` object is cloned before use. Options are not validated
+to the same extend as when configuration files are loaded using `fromDirectory`
+or when the `extends` option is resolved.
 
 ### `fromConfig(baseConfig: Config, options?: {cache: Cache}): Promise<ResolvedConfig>`
 
@@ -77,6 +81,10 @@ resolved with the [resulting config object](#resolvedconfig). The promise is
 rejected if [errors](#errors) occur.
 
 A `cache` object may be provided.
+
+Provide `expectedEnvNames` when the config chain may contain JavaScript sources
+(such as `.babelrc.js` files). You must specify all environment names you want
+to use with the resolved config. Defaults to `[currentEnv()]`.
 
 ### `restoreVerifier(buffer: Buffer): Verifier`
 

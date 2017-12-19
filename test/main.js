@@ -57,20 +57,26 @@ test('createConfig() can take a fixed hash for the options', async t => {
 
 test('createConfig() copies options to prevent modification of original input', async t => {
   const options = {
-    env: {
-      foo: {}
-    }
+    inputSourceMap: {},
+    parserOpts: {},
+    generatorOpts: {},
+    ignore: [],
+    only: [],
+    env: {foo: {}}
   }
 
-  await fromConfig(createConfig({
+  const {unflattenedDefaultOptions: [config]} = await fromConfig(createConfig({
     options,
     source: fixture()
   }))
-  t.deepEqual(options, {
-    env: {
-      foo: {}
-    }
-  })
+  t.deepEqual(options.env, {foo: {}})
+
+  t.false(options.inputSourceMap === config.options.inputSourceMap)
+  t.false(options.parserOpts === config.options.parserOpts)
+  t.false(options.generatorOpts === config.options.generatorOpts)
+  t.false(options.ignore === config.options.ignore)
+  t.false(options.only === config.options.only)
+  t.false(options.env === config.options.env)
 })
 
 test('createConfig() throws if options are not provided', t => {
@@ -134,11 +140,11 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
 
   for (const file of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.json5'),
     fixture('compare', 'package.json')
   ]) {
     t.true(cache.files.has(file))
   }
+  t.true(cache.moduleSources.has(fixture('compare', 'extended-by-babelrc.js')))
   t.true(cache.pluginsAndPresets.has(dir))
 
   const env = {}
@@ -146,7 +152,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
 
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
-  t.deepEqual(configModule.getOptions(), {
+  t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
         pluginIndex,
@@ -187,7 +193,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   env.BABEL_ENV = 'foo'
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
-  t.deepEqual(configModule.getOptions(), {
+  t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
         pluginIndex,
@@ -270,13 +276,13 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
 
   for (const file of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.json5'),
     fixture('compare', 'extended-by-virtual.json5'),
     fixture('compare', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'package.json')
   ]) {
     t.true(cache.files.has(file))
   }
+  t.true(cache.moduleSources.has(fixture('compare', 'extended-by-babelrc.js')))
   t.true(cache.pluginsAndPresets.has(dir))
 
   const env = {}
@@ -286,7 +292,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
-  t.deepEqual(configModule.getOptions(), {
+  t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
         pluginIndex,
@@ -353,7 +359,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   })
 
   env.BABEL_ENV = 'foo'
-  t.deepEqual(configModule.getOptions(), {
+  t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
         pluginIndex,
@@ -501,10 +507,13 @@ test('fromConfig() works without cache', async t => {
 
 test('prepareCache()', t => {
   const cache = prepareCache()
-  t.deepEqual(Object.keys(cache), ['dependencyHashes', 'fileExistence', 'files', 'pluginsAndPresets', 'sourceHashes'])
+  t.deepEqual(Object.keys(cache), [
+    'dependencyHashes', 'fileExistence', 'files', 'moduleSources', 'pluginsAndPresets', 'sourceHashes'
+  ])
   t.true(cache.dependencyHashes instanceof Map)
   t.true(cache.fileExistence instanceof Map)
   t.true(cache.files instanceof Map)
+  t.true(cache.moduleSources instanceof Map)
   t.true(cache.pluginsAndPresets instanceof Map)
   t.true(cache.sourceHashes instanceof Map)
 })

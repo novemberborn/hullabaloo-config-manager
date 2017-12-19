@@ -3,7 +3,7 @@ import {runInNewContext} from 'vm'
 import test from 'ava'
 import {transform} from '@babel/core'
 
-import {createConfig, fromConfig} from '..'
+import {createConfig, fromConfig, prepareCache} from '..'
 import runGeneratedCode from './helpers/runGeneratedCode'
 
 const source = require.resolve('./fixtures/compare/virtual.json')
@@ -43,20 +43,21 @@ function transformBabel (envName) {
 }
 
 test('resolved config matches @babel/core', async t => {
-  const config = await fromConfig(createConfig({options, source}))
+  const cache = prepareCache()
+  const config = await fromConfig(createConfig({options, source}), {cache})
   const configModule = runGeneratedCode(config.generateModule())
 
   setBabelEnv()
-  t.deepEqual(transformChain(configModule.getOptions()), transformBabel(), 'no BABEL_ENV')
+  t.deepEqual(transformChain(configModule.getOptions(null, cache)), transformBabel(), 'no BABEL_ENV')
 
   setBabelEnv('foo')
-  t.deepEqual(transformChain(configModule.getOptions()), transformBabel(), 'BABEL_ENV=foo')
+  t.deepEqual(transformChain(configModule.getOptions(null, cache)), transformBabel(), 'BABEL_ENV=foo')
 
   setBabelEnv()
   setNodeEnv('foo')
-  t.deepEqual(transformChain(configModule.getOptions()), transformBabel(), 'no BABEL_ENV, NODE_ENV=foo')
+  t.deepEqual(transformChain(configModule.getOptions(null, cache)), transformBabel(), 'no BABEL_ENV, NODE_ENV=foo')
 
   setBabelEnv()
   setNodeEnv()
-  t.deepEqual(transformChain(configModule.getOptions('foo')), transformBabel('foo'), 'explicit envName')
+  t.deepEqual(transformChain(configModule.getOptions('foo', cache)), transformBabel('foo'), 'explicit envName')
 })

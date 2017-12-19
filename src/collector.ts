@@ -1,17 +1,28 @@
 import path = require('path')
 
 import json5 = require('json5')
+import md5Hex = require('md5-hex')
+import resolveFrom = require('resolve-from')
 
 import BabelOptions, {ReducedOptions} from './BabelOptions'
-import Cache from './Cache'
+import Cache, {isUnrestrictedModuleSource, EnvModuleSource, ModuleSource, UnrestrictedModuleSource} from './Cache'
+import cloneOptions from './cloneOptions'
+import currentEnv from './currentEnv'
 import {ExtendsError, InvalidFileError, MultipleSourcesError, NoSourceFileError, ParseError} from './errors'
+import SimulatedBabelCache from './SimulatedBabelCache'
 import readSafe from './readSafe'
+
+export const enum FileType {
+  JS = 'JS',
+  JSON = 'JSON',
+  JSON5 = 'JSON5'
+}
 
 function has (obj: object, key: string) {
   return Object.prototype.hasOwnProperty.call(obj, key)
 }
 
-function makeValid (source: string, options: any): BabelOptions {
+function validateOptions (source: string, options: any): BabelOptions {
   if (!options) throw new InvalidFileError(source)
   if (typeof options !== 'object') throw new InvalidFileError(source)
   if (Array.isArray(options)) throw new InvalidFileError(source)
@@ -46,7 +57,7 @@ function parseFile (source: string, buffer: Buffer): BabelOptions {
     throw new ParseError(source, err)
   }
 
-  return makeValid(source, options)
+  return validateOptions(source, options)
 }
 
 function parsePackage (source: string, buffer: Buffer): BabelOptions | null {
@@ -63,15 +74,100 @@ function parsePackage (source: string, buffer: Buffer): BabelOptions | null {
     throw new ParseError(source, err)
   }
 
-  return makeValid(source, options)
+  return validateOptions(source, options)
+}
+
+function cloneCachedModule<T extends (ModuleSource | UnrestrictedModuleSource)> (obj: T): T {
+  return Object.assign({}, obj, {options: cloneOptions(obj.options)})
+}
+
+interface ResolvedModule extends ModuleSource {
+  unrestricted: boolean
+  factory? (envName: string): ModuleSource
+}
+function resolveModule (source: string, envName: string, cache?: Cache): ResolvedModule | null {
+  if (cache && cache.moduleSources.has(source)) {
+    const cached = cache.moduleSources.get(source)!
+    if (isUnrestrictedModuleSource(cached)) return cloneCachedModule(cached)
+    if (cached.byEnv.has(envName)) return Object.assign(cloneCachedModule(cached.byEnv.get(envName)!), {factory: cached.factory})
+
+    const result = cached.factory!(envName)
+    cached.byEnv.set(envName, cloneCachedModule(result))
+    return Object.assign(result, {factory: cached.factory})
+  }
+
+  if (resolveFrom.silent(path.dirname(source), source) === null) return null
+
+  let configModule: any
+  try {
+    // TODO: Capture dependencies for hashing by intercepting require() calls.
+    // Need to track dependencies loaded as the module is evaluated, and during
+    // factory calls.
+    configModule = require(source) // eslint-disable-line import/no-dynamic-require
+  } catch (err) {
+    throw new ParseError(source, err)
+  }
+
+  const options = configModule && configModule.__esModule
+    ? configModule.default
+    : configModule
+
+  if (typeof options !== 'function') {
+    if (options && typeof options.then === 'function') throw new InvalidFileError(source)
+
+    const validOptions = validateOptions(source, options)
+    const result: UnrestrictedModuleSource = {options: validOptions, runtimeHash: null, unrestricted: true}
+    if (cache) cache.moduleSources.set(source, cloneCachedModule(result))
+    return cloneCachedModule(result)
+  }
+
+  const factory = (envName: string) => { // eslint-disable-line no-shadow
+    let unrestricted = true
+    const babelCache = new SimulatedBabelCache<{envName: string}>({envName})
+
+    let possibleOptions: any = null
+    try {
+      possibleOptions = options({
+        cache: babelCache.api,
+        env: () => {
+          unrestricted = false
+          return babelCache.api.using(data => data.envName)
+        },
+        async () {
+          /* istanbul ignore next */
+          return false
+        }
+      })
+    } catch (err) {
+      throw new ParseError(source, err)
+    }
+    babelCache.seal()
+
+    if (!babelCache.wasConfigured) throw new InvalidFileError(source)
+    if (possibleOptions && typeof possibleOptions.then === 'function') throw new InvalidFileError(source)
+
+    return {
+      options: validateOptions(source, possibleOptions),
+      runtimeHash: babelCache.hash(),
+      unrestricted: unrestricted && !babelCache.never
+    }
+  }
+
+  const result = factory(envName)
+  if (cache) {
+    if (result.unrestricted) cache.moduleSources.set(source, cloneCachedModule(result) as UnrestrictedModuleSource)
+    else cache.moduleSources.set(source, {byEnv: new Map([[envName, cloneCachedModule(result)]]), factory})
+  }
+  return Object.assign(cloneCachedModule(result), {factory})
 }
 
 export class Config {
   public readonly dir: string
-  public readonly env: string | null
+  public readonly envName: string | null
+  public readonly fileType: FileType
   public readonly hash: string | null
-  public readonly json5: boolean
   public readonly options: BabelOptions
+  public readonly runtimeHash: string | null
   public readonly source: string
 
   public babelrcPointer: number | null
@@ -81,17 +177,19 @@ export class Config {
 
   public constructor (
     dir: string,
-    env: string | null,
+    envName: string | null,
     hash: string | null,
-    json5: boolean,
     options: BabelOptions,
-    source: string
+    source: string,
+    fileType: FileType,
+    runtimeHash: string | null
   ) {
     this.dir = dir
-    this.env = env
+    this.envName = envName
+    this.fileType = fileType
     this.hash = hash
-    this.json5 = json5
     this.options = options
+    this.runtimeHash = typeof runtimeHash === 'string' ? runtimeHash : null
     this.source = source
 
     this.babelrcPointer = null
@@ -100,8 +198,8 @@ export class Config {
     this.extendsPointer = null
   }
 
-  public copyWithEnv (env: string, options: BabelOptions): Config {
-    return new Config(this.dir, env, this.hash, this.json5, options, this.source)
+  public copyWithEnv (envName: string, options: BabelOptions, runtimeHash: string | null): Config {
+    return new Config(this.dir, envName, this.hash, options, this.source, this.fileType, runtimeHash)
   }
 
   public extend (config: Config): void {
@@ -133,57 +231,97 @@ export class Config {
   }
 }
 
-async function resolveDirectory (dir: string, cache?: Cache): Promise<Config | null> {
-  const fileSource = path.join(dir, '.babelrc')
-  const packageSource = path.join(dir, 'package.json')
+class FactoryConfig extends Config {
+  public readonly factory: (envName: string) => ModuleSource
 
-  type Options = BabelOptions | null
-  interface Result {
-    json5: boolean
-    source: string
-    parse(): Options
+  public constructor ( // eslint-disable-line typescript/member-ordering
+    dir: string,
+    source: string,
+    factory: (envName: string) => ModuleSource
+  ) {
+    super(dir, null, null, {}, source, FileType.JS, null)
+    this.factory = factory
   }
+}
+
+async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?: Cache): Promise<Config | null> {
+  const fileSource = path.resolve(dir, '.babelrc')
+  const jsSource = path.resolve(dir, '.babelrc.js')
+  const packageSource = path.resolve(dir, 'package.json')
 
   // Attempt to read file and package concurrently. Neither may exist, and
   // that's OK.
-  const fromFile = readSafe(fileSource, cache).then<Result | null>(contents => contents && {
-    json5: true,
-    parse () { return parseFile(fileSource, contents) },
-    source: fileSource
-  })
+  const fromFile = readSafe(fileSource, cache)
+  const fromPackage = readSafe(packageSource, cache)
 
-  const fromPackage = readSafe(packageSource, cache).then<Result | null>(contents => contents && {
-    json5: false,
-    parse () { return parsePackage(packageSource, contents) },
-    source: packageSource
-  })
+  // Also try to resolve the .babelrc.js file.
+  const envName = expectedEnvNames.length > 0
+    ? expectedEnvNames[0]
+    : currentEnv()
+  const jsOptions = resolveModule(jsSource, envName, cache)
 
-  let result = await fromFile
-  let options: Options = null
-  if (result) {
-    const packageResult = await fromPackage
-    if (packageResult && packageResult.parse() !== null) {
+  const fileContents = await fromFile
+  if (fileContents) {
+    const packageContents = await fromPackage
+    if (packageContents && parsePackage(packageSource, packageContents) !== null) {
       throw new MultipleSourcesError(fileSource, packageSource)
     }
+    if (jsOptions) {
+      throw new MultipleSourcesError(fileSource, jsSource)
+    }
 
-    options = result.parse()
-  } else {
-    result = await fromPackage
-    if (result) {
-      options = result.parse()
+    return new Config(dir, null, null, parseFile(fileSource, fileContents), fileSource, FileType.JSON5, null)
+  }
+
+  const packageContents = await fromPackage
+  if (packageContents) {
+    const options = parsePackage(packageSource, packageContents)
+    if (options) {
+      if (jsOptions) throw new MultipleSourcesError(jsSource, packageSource)
+      return new Config(dir, null, null, options, packageSource, FileType.JSON, null)
     }
   }
 
-  return result && options && new Config(dir, null, null, result.json5, options, result.source)
+  if (jsOptions) {
+    if (jsOptions.unrestricted) {
+      return new Config(dir, null, null, jsOptions.options, jsSource, FileType.JS, jsOptions.runtimeHash)
+    } else if (expectedEnvNames.length === 0) {
+      return new Config(dir, envName, null, jsOptions.options, jsSource, FileType.JS, jsOptions.runtimeHash)
+    } else {
+      return new FactoryConfig(dir, jsSource, jsOptions.factory!)
+    }
+  }
+
+  return null
 }
 
-async function resolveFile (source: string, cache?: Cache): Promise<Config> {
+async function resolveFile (source: string, expectedEnvNames: string[], cache?: Cache): Promise<Config> {
+  const dir = path.dirname(source)
+  if (path.extname(source) === '.js') {
+    const envName = expectedEnvNames.length > 0
+      ? expectedEnvNames[0]
+      : currentEnv()
+    const jsOptions = resolveModule(source, envName, cache)
+    // The file *must* exist. `resolveModule()` returns `null` when it doesn't.
+    // Causes a proper error to be propagated to where "extends" directives are
+    // resolved.
+    if (!jsOptions) throw new NoSourceFileError(source)
+
+    if (jsOptions.unrestricted) {
+      return new Config(dir, null, null, jsOptions.options, source, FileType.JS, jsOptions.runtimeHash)
+    } else if (expectedEnvNames.length === 0) {
+      return new Config(dir, envName, null, jsOptions.options, source, FileType.JS, jsOptions.runtimeHash)
+    } else {
+      return new FactoryConfig(dir, source, jsOptions.factory!)
+    }
+  }
+
   const contents = await readSafe(source, cache)
-  // The file *must* exist. Causes a proper error to be propagated to
-  // where "extends" directives are resolved.
+  // The file *must* exist. Causes a proper error to be propagated to where
+  // "extends" directives are resolved.
   if (!contents) throw new NoSourceFileError(source)
 
-  return new Config(path.dirname(source), null, null, true, parseFile(source, contents), source)
+  return new Config(path.dirname(source), null, null, parseFile(source, contents), source, FileType.JSON5, null)
 }
 
 export type Chain = Set<Config>
@@ -225,64 +363,95 @@ class Collector {
     return this.configs[0]
   }
 
-  public async add (config: Config): Promise<number> {
+  public async add (config: Config, expectedEnvNames: string[]): Promise<number> {
     // Avoid adding duplicate configs. Note that configs that came from an
     // "env" directive share their source with their parent config.
-    if (!config.env && this.pointers.has(config.source)) {
+    if (!config.envName && this.pointers.has(config.source)) {
       return this.pointers.get(config.source)!
     }
 
     const pointer = this.configs.push(config) - 1
     // Make sure not to override the pointer to an environmental
     // config's parent.
-    if (!config.env) this.pointers.set(config.source, pointer)
-
-    const envs = config.takeEnvs()
-    const extendsClause = config.takeExtends()
+    if (!config.envName) this.pointers.set(config.source, pointer)
 
     // Collect promises so they can run concurrently and be awaited at the end
     // of this function.
     const waitFor = []
 
-    if (config.extends) {
-      const promise = this.add(config.extends).then(extendsPointer => {
-        config.extendsPointer = extendsPointer
-      })
-      waitFor.push(promise)
-    } else if (extendsClause) {
-      const extendsSource = path.resolve(config.dir, extendsClause)
+    if (config instanceof FactoryConfig) {
+      for (const envName of expectedEnvNames) {
+        this.envNames.add(envName)
 
-      if (this.pointers.has(extendsSource)) {
-        // Point at existing config.
-        config.extendsPointer = this.pointers.get(extendsSource)!
-      } else {
-        // Different configs may concurrently resolve the same extends source.
-        // While only one such resolution is added to the config list, this
-        // does lead to extra file I/O and parsing. Optimizing this is not
-        // currently considered worthwhile.
-        const promise = resolveFile(extendsSource, this.cache).then(async parentConfig => {
-          config.extendsPointer = await this.add(parentConfig)
-        }).catch(err => {
-          if (err.name === 'NoSourceFileError') {
-            throw new ExtendsError(config.source, extendsClause, err)
+        let options: BabelOptions
+        let runtimeHash: string | null = null
+        if (this.cache && this.cache.moduleSources.has(config.source)) {
+          // `config` shouldn't be a `FactoryConfig` unless its cached source
+          // is an `EnvModuleSource`.
+          const cached = this.cache.moduleSources.get(config.source)! as EnvModuleSource
+          if (cached.byEnv.has(envName)) {
+            options = cloneOptions(cached.byEnv.get(envName)!.options)
+          } else {
+            const result = config.factory(envName)
+            cached.byEnv.set(envName, result)
+            options = cloneOptions(result.options)
+            runtimeHash = result.runtimeHash
           }
+        } else {
+          const result = config.factory(envName)
+          options = result.options
+          runtimeHash = result.runtimeHash
+        }
 
-          throw err
+        const promise = this.add(config.copyWithEnv(envName, options, runtimeHash), [envName]).then(envPointer => {
+          config.envPointers.set(envName, envPointer)
         })
-
         waitFor.push(promise)
       }
-    }
+    } else {
+      const envs = config.takeEnvs()
+      const extendsClause = config.takeExtends()
 
-    for (const pair of envs) {
-      const name = pair[0]
-      const options = pair[1]
+      if (config.extends) {
+        const promise = this.add(config.extends, expectedEnvNames).then(extendsPointer => {
+          config.extendsPointer = extendsPointer
+        })
+        waitFor.push(promise)
+      } else if (extendsClause) {
+        const extendsSource = path.resolve(config.dir, extendsClause)
 
-      this.envNames.add(name)
-      const promise = this.add(config.copyWithEnv(name, options)).then(envPointer => {
-        config.envPointers.set(name, envPointer)
-      })
-      waitFor.push(promise)
+        if (this.pointers.has(extendsSource)) {
+          // Point at existing config.
+          config.extendsPointer = this.pointers.get(extendsSource)!
+        } else {
+          // Different configs may concurrently resolve the same extends source.
+          // While only one such resolution is added to the config list, this
+          // does lead to extra file I/O and parsing. Optimizing this is not
+          // currently considered worthwhile.
+          const promise = resolveFile(extendsSource, expectedEnvNames, this.cache).then(async parentConfig => {
+            config.extendsPointer = await this.add(parentConfig, expectedEnvNames)
+          }).catch(err => {
+            if (err.name === 'NoSourceFileError') {
+              throw new ExtendsError(config.source, extendsClause, err)
+            }
+
+            throw err
+          })
+
+          waitFor.push(promise)
+        }
+      }
+
+      for (const pair of envs) {
+        const envName = pair[0]
+        const options = pair[1]
+
+        this.envNames.add(envName)
+        const promise = this.add(config.copyWithEnv(envName, options, null), [envName]).then(envPointer => {
+          config.envPointers.set(envName, envPointer)
+        })
+        waitFor.push(promise)
+      }
     }
 
     await Promise.all(waitFor)
@@ -343,6 +512,13 @@ class Collector {
       return chain
     }
 
+    const deleteFactoryConfigs = (chain: Chain): Chain => {
+      for (const config of chain) {
+        if (config instanceof FactoryConfig) chain.delete(config)
+      }
+      return chain
+    }
+
     // Start with the first config. This is either the base config provided
     // to fromConfig(), or the config derived from .babelrc / package.json
     // found in fromDirectory().
@@ -351,14 +527,14 @@ class Collector {
     // For each environment, augment the default chain with environmental
     // configs.
     const envChains = new Map(Array.from(this.envNames, (name): [string, Chain] => {
-      return [name, resolveChain(defaultChain, name)]
+      return [name, deleteFactoryConfigs(resolveChain(defaultChain, name))]
     }))
 
-    return new Chains(babelrcDir, defaultChain, envChains)
+    return new Chains(babelrcDir, deleteFactoryConfigs(defaultChain), envChains)
   }
 }
 
-export async function fromConfig (baseConfig: Config, cache?: Cache): Promise<Chains> {
+export async function fromConfig (baseConfig: Config, expectedEnvNames?: string[], cache?: Cache): Promise<Chains> {
   let babelrcConfig: Config | null = null
   for (let config: Config | null = baseConfig; config; config = config.extends) {
     if (config.options.babelrc === false) continue
@@ -372,25 +548,25 @@ export async function fromConfig (baseConfig: Config, cache?: Cache): Promise<Ch
 
   const collector = new Collector(cache)
   await Promise.all<any>([
-    collector.add(baseConfig),
+    collector.add(baseConfig, expectedEnvNames || []),
     // Resolve the directory concurrently. Assumes that in the common case,
     // the babelrcConfig doesn't extend from a .babelrc file while also leaving
     // the babelrc option enabled. Worst case the resolved config is discarded
     // as a duplicate.
-    babelrcConfig && resolveDirectory(babelrcConfig.dir, cache).then(async parentConfig => {
+    babelrcConfig && resolveDirectory(babelrcConfig.dir, expectedEnvNames || [], cache).then(async parentConfig => {
       if (parentConfig) {
-        babelrcConfig!.babelrcPointer = await collector.add(parentConfig)
+        babelrcConfig!.babelrcPointer = await collector.add(parentConfig, expectedEnvNames || [])
       }
     })
   ])
   return babelrcConfig ? collector.resolveChains(babelrcConfig.dir)! : collector.resolveChains()!
 }
 
-export function fromDirectory (dir: string, cache?: Cache): Promise<Chains | null> {
+export function fromDirectory (dir: string, expectedEnvNames?: string[], cache?: Cache): Promise<Chains | null> {
   dir = path.resolve(dir)
 
   const collector = new Collector(cache)
-  return resolveDirectory(dir, cache)
-    .then<any>(config => config && collector.add(config))
+  return resolveDirectory(dir, expectedEnvNames || [], cache)
+    .then<any>(config => config && collector.add(config, expectedEnvNames || []))
     .then(() => collector.resolveChains(dir))
 }

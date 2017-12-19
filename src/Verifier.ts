@@ -35,6 +35,24 @@ function ensureMissingBabelrcFile (file: string, cache?: Cache): Promise<boolean
   return promise
 }
 
+async function checkConfigFiles (babelrcDir: undefined | string, sourcesToHash: Source[], cache?: Cache): Promise<boolean> {
+  if (typeof babelrcDir === 'undefined') return true
+
+  const checks: Promise<boolean>[] = []
+
+  const babelrcFile = path.join(babelrcDir, '.babelrc')
+  if (!sourcesToHash.some(item => item.source === babelrcFile)) {
+    checks.push(ensureMissingBabelrcFile(babelrcFile, cache))
+  }
+  const babelrcJsFile = path.join(babelrcDir, '.babelrc.js')
+  if (!sourcesToHash.some(item => item.source === babelrcJsFile)) {
+    checks.push(ensureMissingBabelrcFile(babelrcJsFile, cache))
+  }
+
+  const results = await Promise.all(checks)
+  return results.every(missing => missing)
+}
+
 export type VerificationResult = {sourcesChanged: true} | {missingSource: true} | {badDependency: true} | {
   sourcesChanged: false
   dependenciesChanged: boolean
@@ -112,13 +130,7 @@ export default class Verifier {
     const expectedSourceHashes = sourcesToHash.map(item => item.hash)
     const pendingSourceHashes = hashSources(sourcesToHash, fixedHashes && fixedHashes.sources, cache)
 
-    let checkedBabelrcFile: true | Promise<boolean> = true
-    if (this.babelrcDir) {
-      const babelrcFile = path.join(this.babelrcDir, '.babelrc')
-      if (!sourcesToHash.some(item => item.source === babelrcFile)) {
-        checkedBabelrcFile = ensureMissingBabelrcFile(babelrcFile, cache)
-      }
-    }
+    const checkedConfigFiles = checkConfigFiles(this.babelrcDir, sourcesToHash, cache)
 
     const dependenciesToHash = this.selectByEnv(this.dependencies, envName)
     const expectedDependencyHashes = dependenciesToHash.map(item => item.hash)
@@ -127,12 +139,12 @@ export default class Verifier {
     try {
       const results = await Promise.all([
         pendingSourceHashes,
-        checkedBabelrcFile
+        checkedConfigFiles
       ])
       const sourceHashes = results[0]
-      const babelrcFileIsSame = results[1]
+      const configFilesAreSame = results[1]
 
-      if (!babelrcFileIsSame || !isEqual(sourceHashes, expectedSourceHashes)) {
+      if (!configFilesAreSame || !isEqual(sourceHashes, expectedSourceHashes)) {
         return {sourcesChanged: true}
       }
 

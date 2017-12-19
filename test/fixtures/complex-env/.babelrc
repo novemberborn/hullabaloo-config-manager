@@ -1,5 +1,5 @@
 {
-  extends: 'extended.json5',
+  extends: 'extended.js',
   plugins: ['babelrc'],
   env: {
     foo: {

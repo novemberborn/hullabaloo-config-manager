@@ -32,7 +32,7 @@ test.before(t => {
 
   for (const fp of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.json5'),
+    fixture('compare', 'extended-by-babelrc.js'),
     fixture('compare', 'extended-by-virtual.json5'),
     fixture('compare', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'virtual.json')
@@ -94,7 +94,7 @@ test('cache is used when creating verifier', async t => {
   }
   for (const file of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.json5'),
+    fixture('compare', 'extended-by-babelrc.js'),
     fixture('compare', 'extended-by-virtual.json5'),
     fixture('compare', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'virtual.json')
@@ -122,7 +122,7 @@ test('cacheKeysForCurrentEnv()', async t => {
     ]),
     sources: md5Hex([
       hashes[fixture('compare', '.babelrc')],
-      hashes[fixture('compare', 'extended-by-babelrc.json5')],
+      hashes[fixture('compare', 'extended-by-babelrc.js')],
       hashes[fixture('compare', 'extended-by-virtual.json5')],
       hashes[fixture('compare', 'virtual.json')]
     ])
@@ -138,7 +138,7 @@ test('cacheKeysForCurrentEnv()', async t => {
     ]),
     sources: md5Hex([
       hashes[fixture('compare', '.babelrc')],
-      hashes[fixture('compare', 'extended-by-babelrc.json5')],
+      hashes[fixture('compare', 'extended-by-babelrc.js')],
       hashes[fixture('compare', 'extended-by-virtual-foo.json5')],
       hashes[fixture('compare', 'extended-by-virtual.json5')],
       hashes[fixture('compare', 'virtual.json')]
@@ -222,7 +222,53 @@ test('verifyCurrentEnv() behavior with .babelrc file', async t => {
   t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
 })
 
-test('verifyCurrentEnv() behavior without .babelrc file', async t => {
+test('verifyCurrentEnv() behavior with .babelrc.js file', async t => {
+  const dir = path.join(tmpDir, 'babelrcjs')
+  fse.copySync(fixture('verifier', 'babelrcjs'), dir)
+
+  const verifier = await (await fromDirectory(dir)).createVerifier()
+  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+
+  t.deepEqual(await verifier.verifyCurrentEnv(), {
+    sourcesChanged: false,
+    dependenciesChanged: false,
+    cacheKeys,
+    verifier
+  })
+
+  {
+    fs.writeFileSync(path.join(dir, 'plugin.js'), 'foo')
+    const expectedCacheKeys = {
+      dependencies: md5Hex([md5Hex('foo')]),
+      sources: cacheKeys.sources
+    }
+
+    const result = await verifier.verifyCurrentEnv()
+    const {verifier: newVerifier} = result
+    delete result.verifier
+
+    t.deepEqual(result, {
+      sourcesChanged: false,
+      dependenciesChanged: true,
+      cacheKeys: expectedCacheKeys
+    })
+    t.true(newVerifier !== verifier)
+    t.deepEqual(newVerifier.cacheKeysForCurrentEnv(), expectedCacheKeys)
+  }
+
+  fs.writeFileSync(path.join(dir, 'extends.json5'), '{foo:true}')
+  t.deepEqual(await verifier.verifyCurrentEnv(), {
+    sourcesChanged: true
+  })
+
+  fse.copySync(fixture('verifier', 'babelrcjs', 'extends.json5'), path.join(dir, 'extends.json5'))
+  t.false((await verifier.verifyCurrentEnv()).sourcesChanged)
+
+  fs.writeFileSync(path.join(dir, '.babelrc.js'), 'module.exports = {}')
+  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+})
+
+test('verifyCurrentEnv() behavior without .babelrc or .babelrcjs file', async t => {
   const dir = path.join(tmpDir, 'pkg')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
@@ -246,9 +292,13 @@ test('verifyCurrentEnv() behavior without .babelrc file', async t => {
 
   fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
   t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+
+  fs.unlinkSync(path.join(dir, '.babelrc'))
+  fs.writeFileSync(path.join(dir, '.babelrc.js'), '{}')
+  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
 })
 
-test('verifyCurrentEnv() behavior if .babelrc sources do not need to be consulted at all', async t => {
+test('verifyCurrentEnv() behavior if .babelrc or .babelrc.js sources do not need to be consulted at all', async t => {
   const dir = path.join(tmpDir, 'no-babelrc')
   fse.copySync(fixture('verifier', 'babelrc'), dir)
 
@@ -273,6 +323,9 @@ test('verifyCurrentEnv() behavior if .babelrc sources do not need to be consulte
   })
 
   fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
+  t.false((await verifier.verifyCurrentEnv(fixedHashes)).sourcesChanged)
+
+  fs.writeFileSync(path.join(dir, '.babelrc.js'), '{}')
   t.false((await verifier.verifyCurrentEnv(fixedHashes)).sourcesChanged)
 })
 
@@ -311,7 +364,8 @@ test('verifyCurrentEnv() can use cache', async t => {
     plugin
   ])
   t.deepEqual(Array.from(cache.fileExistence.keys()), [
-    path.join(dir, '.babelrc')
+    path.join(dir, '.babelrc'),
+    path.join(dir, '.babelrc.js')
   ])
   t.deepEqual(Array.from(cache.files.keys()), [
     path.join(dir, 'extends.json5'),

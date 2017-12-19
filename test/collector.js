@@ -9,7 +9,9 @@ import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
 const compare = async (t, resolveChains, expected) => {
-  const pairs = Array.from((await resolveChains()).defaultChain, (config, index) => [config, expected[index]])
+  const chain = (await resolveChains()).defaultChain
+  const pairs = Array.from(chain, (config, index) => [config, expected[index]])
+  t.true(pairs.length === expected.length)
 
   let index = 0
   for (const [config, expectedConfig] of pairs) {
@@ -20,8 +22,10 @@ const compare = async (t, resolveChains, expected) => {
   }
 }
 
-const compareEnv = async (t, resolveChains, env, expected) => {
-  const pairs = Array.from((await resolveChains()).envChains.get(env), (config, index) => [config, expected[index]])
+const compareEnv = async (t, resolveChains, envName, expected) => {
+  const chain = (await resolveChains(envName)).envChains.get(envName)
+  const pairs = Array.from(chain, (config, index) => [config, expected[index]])
+  t.true(pairs.length === expected.length)
 
   let index = 0
   for (const [config, expectedConfig] of pairs) {
@@ -39,7 +43,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 
   const [root, dir2, pkg, env] = ['', 'dir2', 'pkg', 'env']
     .map(dir => fixture('babel-config-chain', dir))
-    .map(expanded => () => collector.fromDirectory(expanded))
+    .map(expanded => envName => collector.fromDirectory(expanded, envName && [envName]))
 
   test('babel-config-chain: root', compare, root, [
     {
@@ -115,18 +119,103 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
+  // Exercise babel-config-chain assertions, based on
+  // <https://github.com/babel/babel/blob/d76092b2ddd86ecaa9df2a23610fd86a34ed379b/packages/babel-core/test/config-chain.js>,
+  // but without using virtual configs, modified to use JS modules rather than
+  // JSON5 files.
+
+  const [root, dir2, pkg, env] = ['', 'dir2', 'pkg', 'env']
+    .map(dir => fixture('babel-config-chain-js', dir))
+    .map(expanded => envName => collector.fromDirectory(expanded, envName && [envName]))
+
+  test('babel-config-chain-js: root', compare, root, [
+    {
+      options: {
+        plugins: ['extended']
+      },
+      source: fixture('babel-config-chain-js', 'extended.babelrc.js')
+    },
+    {
+      options: {
+        plugins: ['root']
+      },
+      source: fixture('babel-config-chain-js', '.babelrc.js')
+    }
+  ])
+
+  test('babel-config-chain-js: dir2', compare, dir2, [
+    {
+      options: {
+        plugins: ['dir2']
+      },
+      source: fixture('babel-config-chain-js', 'dir2', '.babelrc.js')
+    }
+  ])
+
+  test('babel-config-chain-js: pkg', compare, pkg, [
+    {
+      options: {
+        plugins: ['pkg-plugin']
+      },
+      source: fixture('babel-config-chain-js', 'pkg', 'package.json')
+    }
+  ])
+
+  test('babel-config-chain-js: env - base', compare, env, [
+    {
+      options: {
+        plugins: ['env-base']
+      },
+      source: fixture('babel-config-chain-js', 'env', '.babelrc.js')
+    }
+  ])
+
+  test('babel-config-chain-js: env - foo', compareEnv, env, 'foo', [
+    {
+      options: {
+        plugins: [
+          'env-base'
+        ]
+      },
+      source: fixture('babel-config-chain-js', 'env', '.babelrc.js')
+    },
+    {
+      options: {
+        plugins: [
+          'env-foo'
+        ]
+      },
+      source: fixture('babel-config-chain-js', 'env', '.babelrc.js')
+    }
+  ])
+
+  test('babel-config-chain-js: env - bar', compareEnv, env, 'bar', [
+    {
+      options: {
+        plugins: [
+          'env-base',
+          'env-bar'
+        ]
+      },
+      source: fixture('babel-config-chain-js', 'env', '.babelrc.js')
+    }
+  ])
+}
+
+{
   const babelrc = () => collector.fromConfig(createConfig({
-    json5: true,
     options: {plugins: ['created-config']},
     source: fixture('babelrc', 'source.js')
   }))
+  const js = () => collector.fromConfig(createConfig({
+    options: {plugins: ['created-config']},
+    source: fixture('js', 'source.js')
+  }))
   const pkg = () => collector.fromConfig(createConfig({
-    json5: false,
     options: {plugins: ['created-config']},
     source: fixture('pkg', 'source.js')
   }))
   const disabled = () => collector.fromConfig(createConfig({
-    json5: false,
     options: {babelrc: false, plugins: ['created-config']},
     source: fixture('babelrc', 'source.js')
   }))
@@ -136,15 +225,28 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       options: {
         plugins: ['babelrc']
       },
-      source: fixture('babelrc', '.babelrc'),
-      json5: true
+      source: fixture('babelrc', '.babelrc')
     },
     {
       options: {
         plugins: ['created-config']
       },
-      source: fixture('babelrc', 'source.js'),
-      json5: true
+      source: fixture('babelrc', 'source.js')
+    }
+  ])
+
+  test('fromConfig() with .babelrc.js', compare, js, [
+    {
+      options: {
+        plugins: ['js']
+      },
+      source: fixture('js', '.babelrc.js')
+    },
+    {
+      options: {
+        plugins: ['created-config']
+      },
+      source: fixture('js', 'source.js')
     }
   ])
 
@@ -153,15 +255,13 @@ const compareEnv = async (t, resolveChains, env, expected) => {
       options: {
         plugins: ['pkg']
       },
-      source: fixture('pkg', 'package.json'),
-      json5: false
+      source: fixture('pkg', 'package.json')
     },
     {
       options: {
         plugins: ['created-config']
       },
-      source: fixture('pkg', 'source.js'),
-      json5: false
+      source: fixture('pkg', 'source.js')
     }
   ])
 
@@ -171,8 +271,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
         babelrc: false,
         plugins: ['created-config']
       },
-      source: fixture('babelrc', 'source.js'),
-      json5: true
+      source: fixture('babelrc', 'source.js')
     }
   ])
 }
@@ -259,7 +358,7 @@ const compareEnv = async (t, resolveChains, env, expected) => {
 }
 
 {
-  const complex = () => collector.fromDirectory(fixture('complex-env'))
+  const complex = envName => collector.fromDirectory(fixture('complex-env'), [envName])
   test('resolves complex enviroment chains', compareEnv, complex, 'foo', [
     {
       options: {
@@ -269,15 +368,15 @@ const compareEnv = async (t, resolveChains, env, expected) => {
     },
     {
       options: {
-        plugins: ['extended']
-      },
-      source: fixture('complex-env', 'extended.json5')
-    },
-    {
-      options: {
         plugins: ['extended-further/env/foo']
       },
       source: fixture('complex-env', 'extended-further.json5')
+    },
+    {
+      options: {
+        plugins: ['extended']
+      },
+      source: fixture('complex-env', 'extended.js')
     },
     {
       options: {
@@ -475,7 +574,6 @@ test('a cache can be used for file access', async t => {
   for (const filename of [
     fixture('complex-env', '.babelrc'),
     fixture('complex-env', 'extended-further.json5'),
-    fixture('complex-env', 'extended.json5'),
     fixture('complex-env', 'foo.json5')
   ]) {
     td.when(readFile(filename)).thenCallback(null, fs.readFileSync(filename))
@@ -495,10 +593,106 @@ test('a cache can be used for file access', async t => {
   const sharedCache = prepareCache()
 
   await Promise.all([
-    fromDirectory(fixture('complex-env'), sharedCache),
-    fromDirectory(fixture('complex-env'), sharedCache)
+    fromDirectory(fixture('complex-env'), [], sharedCache),
+    fromDirectory(fixture('complex-env'), [], sharedCache)
   ])
 
   const {callCount} = td.explain(readFile)
-  t.is(callCount, 5)
+  t.is(callCount, 4)
+})
+
+test('supports CJS exports in .babelrc.js files',
+  compare,
+  () => collector.fromDirectory(fixture('js', 'cjs-object')),
+  [
+    {
+      options: {
+        plugins: ['cjs-object']
+      },
+      source: fixture('js', 'cjs-object', '.babelrc.js')
+    }
+  ])
+
+test('supports CJS factory exports in .babelrc.js files',
+  compare,
+  () => collector.fromDirectory(fixture('js', 'cjs-factory')),
+  [
+    {
+      options: {
+        plugins: ['cjs-factory']
+      },
+      source: fixture('js', 'cjs-factory', '.babelrc.js')
+    }
+  ])
+
+test('supports __esModule default export in .babelrc.js files',
+  compare,
+  () => collector.fromDirectory(fixture('js', 'esm-object')),
+  [
+    {
+      options: {
+        plugins: ['esm-object']
+      },
+      source: fixture('js', 'esm-object', '.babelrc.js')
+    }
+  ])
+
+test('supports __esModule factory default export in .babelrc.js files',
+  compare,
+  () => collector.fromDirectory(fixture('js', 'esm-factory')),
+  [
+    {
+      options: {
+        plugins: ['esm-factory']
+      },
+      source: fixture('js', 'esm-factory', '.babelrc.js')
+    }
+  ])
+
+test('a cache can be used for factory modules', async t => {
+  {
+    const {getCount} = require('./fixtures/js/cache-usage/forever/.babelrc.js')
+    const sharedCache = prepareCache()
+    await Promise.all([
+      collector.fromDirectory(fixture('js', 'cache-usage', 'forever'), ['foo'], sharedCache),
+      collector.fromDirectory(fixture('js', 'cache-usage', 'forever'), ['bar'], sharedCache)
+    ])
+    t.is(getCount(), 1, 'forever')
+  }
+
+  {
+    const {getCount} = require('./fixtures/js/cache-usage/never/.babelrc.js')
+    const sharedCache = prepareCache()
+    await Promise.all([
+      collector.fromDirectory(fixture('js', 'cache-usage', 'never'), ['foo'], sharedCache),
+      collector.fromDirectory(fixture('js', 'cache-usage', 'never'), ['bar'], sharedCache)
+    ])
+    t.is(getCount(), 2, 'never')
+  }
+
+  {
+    const {getCount} = require('./fixtures/js/cache-usage/env/.babelrc.js')
+    const sharedCache = prepareCache()
+    await Promise.all([
+      collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['foo'], sharedCache),
+      collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['bar'], sharedCache)
+    ])
+    t.is(getCount(), 2, 'env')
+
+    await collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['foo'], sharedCache)
+    t.is(getCount(), 2, 'env (just foo)')
+
+    await collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['foo', 'baz'], sharedCache)
+    t.is(getCount(), 3, 'env (foo and baz)')
+  }
+
+  {
+    const {getCount} = require('./fixtures/js/cache-usage/static/.babelrc.js')
+    const sharedCache = prepareCache()
+    await Promise.all([
+      collector.fromDirectory(fixture('js', 'cache-usage', 'static'), [], sharedCache),
+      collector.fromDirectory(fixture('js', 'cache-usage', 'static'), [], sharedCache)
+    ])
+    t.is(getCount(), 1, 'static')
+  }
 })
