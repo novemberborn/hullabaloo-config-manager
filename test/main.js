@@ -49,7 +49,7 @@ test('createConfig() can take a fixed hash for the options', async t => {
   }))
 
   const verifier = await result.createVerifier()
-  t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
+  t.deepEqual(verifier.cacheKeysForEnv(), {
     dependencies: md5Hex([]),
     sources: md5Hex(['hash of foo'])
   })

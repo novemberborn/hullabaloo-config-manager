@@ -111,8 +111,8 @@ export default class Verifier {
     return new Verifier(babelrcDir, envNames, dependencies, sources)
   }
 
-  public cacheKeysForCurrentEnv (): {dependencies: string; sources: string} { // eslint-disable-line typescript/member-delimiter-style
-    const envName = currentEnv()
+  public cacheKeysForEnv (envName?: string): {dependencies: string; sources: string} { // eslint-disable-line typescript/member-delimiter-style
+    if (typeof envName !== 'string') envName = currentEnv()
 
     const dependencyHashes = this.selectByEnv(this.dependencies, envName).map(item => item.hash!)
     const sourceHashes = this.selectByEnv(this.sources, envName).map(item => item.hash!)
@@ -123,8 +123,12 @@ export default class Verifier {
     }
   }
 
-  public async verifyCurrentEnv (fixedHashes?: {sources?: Map<string, string>}, cache?: Cache): Promise<VerificationResult> {
-    const envName = currentEnv()
+  public async verifyEnv (
+    envName?: string | null,
+    fixedHashes?: {sources?: Map<string, string>},
+    cache?: Cache
+  ): Promise<VerificationResult> {
+    if (typeof envName !== 'string') envName = currentEnv()
 
     const sourcesToHash = this.selectByEnv(this.sources, envName)
     const expectedSourceHashes = sourcesToHash.map(item => item.hash)
@@ -153,8 +157,11 @@ export default class Verifier {
 
       let verifier: Verifier = this
       if (dependenciesChanged) {
-        const dependencies = this.dependencies.map((item, index) => {
-          const hash = dependencyHashes[index]
+        const dependencies = this.dependencies.map(item => {
+          const rehashedIndex = dependenciesToHash.indexOf(item)
+          if (rehashedIndex === -1) return {...item}
+
+          const hash = dependencyHashes[rehashedIndex]
           return {...item, hash}
         })
 

@@ -103,7 +103,7 @@ test('cache is used when creating verifier', async t => {
   }
 })
 
-test('cacheKeysForCurrentEnv()', async t => {
+test('cacheKeysForEnv()', async t => {
   const source = fixture('compare', 'virtual.json')
 
   const env = {}
@@ -115,7 +115,7 @@ test('cacheKeysForCurrentEnv()', async t => {
   }), {cache})
   const verifier = await result.createVerifier()
 
-  t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
+  t.deepEqual(verifier.cacheKeysForEnv(), {
     dependencies: md5Hex([
       hashes[fixture('compare', 'node_modules', 'plugin', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'preset', 'package.json')]
@@ -128,8 +128,7 @@ test('cacheKeysForCurrentEnv()', async t => {
     ])
   })
 
-  env.BABEL_ENV = 'foo'
-  t.deepEqual(verifier.cacheKeysForCurrentEnv(), {
+  t.deepEqual(verifier.cacheKeysForEnv('foo'), {
     dependencies: md5Hex([
       hashes[fixture('compare', 'node_modules', 'env-plugin', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin-default-opts', 'package.json')],
@@ -176,14 +175,14 @@ test('can be serialized and deserialized', t => {
   t.deepEqual(deserialized.sources, sources)
 })
 
-test('verifyCurrentEnv() behavior with .babelrc file', async t => {
+test('verifyEnv() behavior with .babelrc file', async t => {
   const dir = path.join(tmpDir, 'babelrc')
   fse.copySync(fixture('verifier', 'babelrc'), dir)
 
   const verifier = await (await fromDirectory(dir)).createVerifier()
-  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+  const cacheKeys = verifier.cacheKeysForEnv()
 
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: false,
     dependenciesChanged: false,
     cacheKeys,
@@ -197,7 +196,7 @@ test('verifyCurrentEnv() behavior with .babelrc file', async t => {
       sources: cacheKeys.sources
     }
 
-    const result = await verifier.verifyCurrentEnv()
+    const result = await verifier.verifyEnv()
     const {verifier: newVerifier} = result
     delete result.verifier
 
@@ -207,29 +206,29 @@ test('verifyCurrentEnv() behavior with .babelrc file', async t => {
       cacheKeys: expectedCacheKeys
     })
     t.true(newVerifier !== verifier)
-    t.deepEqual(newVerifier.cacheKeysForCurrentEnv(), expectedCacheKeys)
+    t.deepEqual(newVerifier.cacheKeysForEnv(), expectedCacheKeys)
   }
 
   fs.writeFileSync(path.join(dir, 'extends.json5'), '{foo:true}')
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: true
   })
 
   fse.copySync(fixture('verifier', 'babelrc', 'extends.json5'), path.join(dir, 'extends.json5'))
-  t.false((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.false((await verifier.verifyEnv()).sourcesChanged)
 
   fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
-  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.true((await verifier.verifyEnv()).sourcesChanged)
 })
 
-test('verifyCurrentEnv() behavior with .babelrc.js file', async t => {
+test('verifyEnv() behavior with .babelrc.js file', async t => {
   const dir = path.join(tmpDir, 'babelrcjs')
   fse.copySync(fixture('verifier', 'babelrcjs'), dir)
 
   const verifier = await (await fromDirectory(dir)).createVerifier()
-  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+  const cacheKeys = verifier.cacheKeysForEnv()
 
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: false,
     dependenciesChanged: false,
     cacheKeys,
@@ -243,7 +242,7 @@ test('verifyCurrentEnv() behavior with .babelrc.js file', async t => {
       sources: cacheKeys.sources
     }
 
-    const result = await verifier.verifyCurrentEnv()
+    const result = await verifier.verifyEnv()
     const {verifier: newVerifier} = result
     delete result.verifier
 
@@ -253,29 +252,75 @@ test('verifyCurrentEnv() behavior with .babelrc.js file', async t => {
       cacheKeys: expectedCacheKeys
     })
     t.true(newVerifier !== verifier)
-    t.deepEqual(newVerifier.cacheKeysForCurrentEnv(), expectedCacheKeys)
+    t.deepEqual(newVerifier.cacheKeysForEnv(), expectedCacheKeys)
   }
 
   fs.writeFileSync(path.join(dir, 'extends.json5'), '{foo:true}')
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: true
   })
 
   fse.copySync(fixture('verifier', 'babelrcjs', 'extends.json5'), path.join(dir, 'extends.json5'))
-  t.false((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.false((await verifier.verifyEnv()).sourcesChanged)
 
   fs.writeFileSync(path.join(dir, '.babelrc.js'), 'module.exports = {}')
-  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.true((await verifier.verifyEnv()).sourcesChanged)
 })
 
-test('verifyCurrentEnv() behavior without .babelrc or .babelrcjs file', async t => {
+test('verifyEnv() behavior with envName argument', async t => {
+  const dir = path.join(tmpDir, 'env')
+  fse.copySync(fixture('verifier', 'babelrc'), dir)
+
+  const verifier = await (await fromDirectory(dir)).createVerifier()
+  const cacheKeys = verifier.cacheKeysForEnv('foo')
+
+  t.deepEqual(await verifier.verifyEnv('foo'), {
+    sourcesChanged: false,
+    dependenciesChanged: false,
+    cacheKeys,
+    verifier
+  })
+
+  {
+    fs.writeFileSync(path.join(dir, 'foo.js'), 'foo')
+    const expectedCacheKeys = {
+      dependencies: md5Hex([md5Hex('foo'), md5Hex('')]),
+      sources: cacheKeys.sources
+    }
+
+    const result = await verifier.verifyEnv('foo')
+    const {verifier: newVerifier} = result
+    delete result.verifier
+
+    t.deepEqual(result, {
+      sourcesChanged: false,
+      dependenciesChanged: true,
+      cacheKeys: expectedCacheKeys
+    })
+    t.true(newVerifier !== verifier)
+    t.deepEqual(newVerifier.cacheKeysForEnv('foo'), expectedCacheKeys)
+  }
+
+  fs.writeFileSync(path.join(dir, 'extends.json5'), '{foo:true}')
+  t.deepEqual(await verifier.verifyEnv(), {
+    sourcesChanged: true
+  })
+
+  fse.copySync(fixture('verifier', 'babelrc', 'extends.json5'), path.join(dir, 'extends.json5'))
+  t.false((await verifier.verifyEnv()).sourcesChanged)
+
+  fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
+  t.true((await verifier.verifyEnv()).sourcesChanged)
+})
+
+test('verifyEnv() behavior without .babelrc or .babelrcjs file', async t => {
   const dir = path.join(tmpDir, 'pkg')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
   const verifier = await (await fromDirectory(dir)).createVerifier()
-  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+  const cacheKeys = verifier.cacheKeysForEnv()
 
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: false,
     dependenciesChanged: false,
     cacheKeys,
@@ -283,22 +328,22 @@ test('verifyCurrentEnv() behavior without .babelrc or .babelrcjs file', async t 
   })
 
   fs.writeFileSync(path.join(dir, 'extends.json5'), '{foo:true}')
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     sourcesChanged: true
   })
 
   fse.copySync(fixture('verifier', 'pkg', 'extends.json5'), path.join(dir, 'extends.json5'))
-  t.false((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.false((await verifier.verifyEnv()).sourcesChanged)
 
   fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
-  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.true((await verifier.verifyEnv()).sourcesChanged)
 
   fs.unlinkSync(path.join(dir, '.babelrc'))
   fs.writeFileSync(path.join(dir, '.babelrc.js'), '{}')
-  t.true((await verifier.verifyCurrentEnv()).sourcesChanged)
+  t.true((await verifier.verifyEnv()).sourcesChanged)
 })
 
-test('verifyCurrentEnv() behavior if .babelrc or .babelrc.js sources do not need to be consulted at all', async t => {
+test('verifyEnv() behavior if .babelrc or .babelrc.js sources do not need to be consulted at all', async t => {
   const dir = path.join(tmpDir, 'no-babelrc')
   fse.copySync(fixture('verifier', 'babelrc'), dir)
 
@@ -313,9 +358,9 @@ test('verifyCurrentEnv() behavior if .babelrc or .babelrc.js sources do not need
     sources: new Map([['source', 'hash of source']])
   }
   const verifier = await (await fromConfig(config)).createVerifier()
-  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+  const cacheKeys = verifier.cacheKeysForEnv()
 
-  t.deepEqual(await verifier.verifyCurrentEnv(fixedHashes), {
+  t.deepEqual(await verifier.verifyEnv(null, fixedHashes), {
     sourcesChanged: false,
     dependenciesChanged: false,
     cacheKeys,
@@ -323,13 +368,13 @@ test('verifyCurrentEnv() behavior if .babelrc or .babelrc.js sources do not need
   })
 
   fs.writeFileSync(path.join(dir, '.babelrc'), '{}')
-  t.false((await verifier.verifyCurrentEnv(fixedHashes)).sourcesChanged)
+  t.false((await verifier.verifyEnv(null, fixedHashes)).sourcesChanged)
 
   fs.writeFileSync(path.join(dir, '.babelrc.js'), '{}')
-  t.false((await verifier.verifyCurrentEnv(fixedHashes)).sourcesChanged)
+  t.false((await verifier.verifyEnv(null, fixedHashes)).sourcesChanged)
 })
 
-test('verifyCurrentEnv() can take fixed source hashes', async t => {
+test('verifyEnv() can take fixed source hashes', async t => {
   const dir = path.join(tmpDir, 'fixed-source-hashes')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
@@ -340,10 +385,10 @@ test('verifyCurrentEnv() can take fixed source hashes', async t => {
   }), {cache: prepareCache()})
   const verifier = await result.createVerifier()
 
-  const cacheKeys = verifier.cacheKeysForCurrentEnv()
+  const cacheKeys = verifier.cacheKeysForEnv()
 
   const fixedHashes = {sources: new Map([['foo', 'hash of foo']])}
-  t.deepEqual(await verifier.verifyCurrentEnv(fixedHashes), {
+  t.deepEqual(await verifier.verifyEnv(null, fixedHashes), {
     sourcesChanged: false,
     dependenciesChanged: false,
     cacheKeys,
@@ -351,14 +396,14 @@ test('verifyCurrentEnv() can take fixed source hashes', async t => {
   })
 })
 
-test('verifyCurrentEnv() can use cache', async t => {
+test('verifyEnv() can use cache', async t => {
   const dir = path.join(tmpDir, 'use-cache')
   fse.copySync(fixture('verifier', 'pkg'), dir)
   const plugin = resolveFrom(dir, './plugin.js')
 
   const cache = prepareCache()
   const verifier = await (await fromDirectory(dir)).createVerifier()
-  await verifier.verifyCurrentEnv(null, cache)
+  await verifier.verifyEnv(null, null, cache)
 
   t.deepEqual(Array.from(cache.dependencyHashes.keys()), [
     plugin
@@ -383,35 +428,35 @@ test('verifyCurrentEnv() can use cache', async t => {
     fs: {access}
   }).default.fromBuffer(buffer)
 
-  stubbedVerifier.verifyCurrentEnv(null, cache)
+  stubbedVerifier.verifyEnv(null, null, cache)
   t.true(td.explain(access).callCount === 0)
 })
 
-test('verifyCurrentEnv() behavior when dependency goes missing', async t => {
+test('verifyEnv() behavior when dependency goes missing', async t => {
   const dir = path.join(tmpDir, 'missing-dependency')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
   const verifier = await (await fromDirectory(dir)).createVerifier()
   fse.removeSync(path.join(dir, 'plugin.js'))
 
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     badDependency: true
   })
 })
 
-test('verifyCurrentEnv() behavior when source goes missing', async t => {
+test('verifyEnv() behavior when source goes missing', async t => {
   const dir = path.join(tmpDir, 'missing-source')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
   const verifier = await (await fromDirectory(dir)).createVerifier()
   fse.removeSync(path.join(dir, 'extends.json5'))
 
-  t.deepEqual(await verifier.verifyCurrentEnv(), {
+  t.deepEqual(await verifier.verifyEnv(), {
     missingSource: true
   })
 })
 
-test('verifyCurrentEnv() behavior with unexpected errors', async t => {
+test('verifyEnv() behavior with unexpected errors', async t => {
   const dir = path.join(tmpDir, 'unexpected-errors')
   fse.copySync(fixture('verifier', 'pkg'), dir)
 
@@ -424,6 +469,6 @@ test('verifyCurrentEnv() behavior with unexpected errors', async t => {
     fs: {access}
   }).default.fromBuffer(buffer)
 
-  const actual = await t.throws(verifier.verifyCurrentEnv())
+  const actual = await t.throws(verifier.verifyEnv())
   t.is(actual, expected)
 })
