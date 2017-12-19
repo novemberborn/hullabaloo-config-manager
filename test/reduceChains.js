@@ -37,7 +37,6 @@ const reduces = (t, defaultChain, envChains, expected) => {
   if ('dependencies' in expected) t.deepEqual(dependencies, expected.dependencies)
   if ('fixedSourceHashes' in expected) t.deepEqual(fixedSourceHashes, expected.fixedSourceHashes)
   if ('envNames' in expected) t.deepEqual(envNames, expected.envNames)
-  if ('json5' in expected) t.is(unflattenedDefaultOptions.json5, expected.json5)
   if ('sources' in expected) t.deepEqual(sources, expected.sources)
   if ('unflattenedDefaultOptions' in expected) t.deepEqual(unflattenedDefaultOptions, expected.unflattenedDefaultOptions)
   if ('unflattenedEnvOptions' in expected) t.deepEqual(unflattenedEnvOptions, expected.unflattenedEnvOptions)
@@ -45,38 +44,48 @@ const reduces = (t, defaultChain, envChains, expected) => {
 
 {
   const zero = {
+    fileType: 'JSON',
     options: {},
-    source: '0'
+    source: '0',
+    runtimeHash: null
   }
   const one = {
+    fileType: 'JSON',
     options: {
       plugins: ['foo'],
       presets: [['./bar', {hello: 'world'}]],
       sourceMaps: true
     },
-    source: '1'
+    source: '1',
+    runtimeHash: null
   }
   const two = {
+    fileType: 'JSON',
     options: {
       parserOpts: {foo: 1},
       plugins: [['./baz', {}], 'foo'],
       presets: [['qux']],
       sourceMaps: false
     },
-    source: '2'
+    source: '2',
+    runtimeHash: null
   }
   const three = {
+    fileType: 'JSON',
     options: {
       parserOpts: {foo: 2},
       presets: [['./bar', {goodbye: true}]]
     },
-    source: '3'
+    source: '3',
+    runtimeHash: null
   }
   const four = {
+    fileType: 'JSON',
     options: {
       plugins: ['quux']
     },
-    source: '4'
+    source: '4',
+    runtimeHash: null
   }
 
   test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four]]]), {
@@ -89,15 +98,15 @@ const reduces = (t, defaultChain, envChains, expected) => {
     ],
     envNames: new Set(['foo']),
     sources: [
-      {default: true, envs: new Set(), source: '0'},
-      {default: true, envs: new Set(['foo']), source: '1'},
-      {default: true, envs: new Set(['foo']), source: '2'},
-      {default: false, envs: new Set(['foo']), source: '3'},
-      {default: false, envs: new Set(['foo']), source: '4'}
+      {default: true, envs: new Set(), source: '0', runtimeHash: null},
+      {default: true, envs: new Set(['foo']), source: '1', runtimeHash: null},
+      {default: true, envs: new Set(['foo']), source: '2', runtimeHash: null},
+      {default: false, envs: new Set(['foo']), source: '3', runtimeHash: null},
+      {default: false, envs: new Set(['foo']), source: '4', runtimeHash: null}
     ],
-    unflattenedDefaultOptions: Object.assign([
-      {
-        babelrc: false,
+    unflattenedDefaultOptions: [{
+      fileType: 'JSON',
+      options: {
         parserOpts: {foo: 1},
         plugins: [
           'babel-plugin-foo',
@@ -110,11 +119,11 @@ const reduces = (t, defaultChain, envChains, expected) => {
         ],
         sourceMaps: false
       }
-    ], {json5: false}),
+    }],
     unflattenedEnvOptions: new Map([
-      ['foo', Object.assign([
-        {
-          babelrc: false,
+      ['foo', [{
+        fileType: 'JSON',
+        options: {
           parserOpts: {foo: 2},
           plugins: [
             'babel-plugin-foo',
@@ -129,68 +138,74 @@ const reduces = (t, defaultChain, envChains, expected) => {
           ],
           sourceMaps: false
         }
-      ], {json5: false})]
+      }]]
     ])
   })
 }
 
-test('babelrc option is always false', reduces, [
-  {
-    options: {
-      babelrc: true
-    }
-  }
-], new Map(), {
-  unflattenedDefaultOptions: Object.assign([{
-    babelrc: false
-  }], {json5: false})
-})
-
 test('removes non-array plugins and presets values', reduces, [
   {
+    fileType: 'JSON',
     options: {
       plugins: 'plugins',
       presets: 'presets'
     }
   }
 ], new Map(), {
-  unflattenedDefaultOptions: Object.assign([
+  unflattenedDefaultOptions: [{
+    fileType: 'JSON',
+    options: {}
+  }]
+})
+
+test('fileType becomes JSON5 if some of the configs were parsed using JSON5', reduces, [
+  {
+    fileType: 'JSON',
+    options: {}
+  },
+  {
+    fileType: 'JSON5',
+    options: {}
+  }
+], new Map(), {
+  unflattenedDefaultOptions: [{
+    fileType: 'JSON5',
+    options: {}
+  }]
+})
+
+test('fileType becomes JSON5 if some of the configs were parsed using JSON5, after encountering a JS config', reduces, [
+  {
+    dir: '~',
+    envName: null,
+    fileType: 'JS',
+    options: {},
+    source: '~/config.js'
+  },
+  {
+    fileType: 'JSON',
+    options: {}
+  },
+  {
+    fileType: 'JSON5',
+    options: {}
+  }
+], new Map(), {
+  unflattenedDefaultOptions: [
     {
-      babelrc: false,
-      plugins: [],
-      presets: []
+      dir: '~',
+      envName: null,
+      fileType: 'JS',
+      source: '~/config.js'
+    },
+    {
+      fileType: 'JSON5',
+      options: {}
     }
-  ], {json5: false})
-})
-
-test('json5 remains false if none of the configs were parsed using JSON5', reduces, [
-  {
-    json5: false,
-    options: {}
-  },
-  {
-    json5: false,
-    options: {}
-  }
-], new Map(), {
-  json5: false
-})
-
-test('json5 becomes true if some of the configs were parsed using JSON5', reduces, [
-  {
-    json5: true,
-    options: {}
-  },
-  {
-    json5: false,
-    options: {}
-  }
-], new Map(), {
-  json5: true
+  ]
 })
 
 {
-  const babelrc = false
   const ignore = {ignore: true}
   const only = {only: true}
   const passPerPreset = {passPerPreset: true}
@@ -198,7 +213,7 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
 
   test('normalizes options', reduces, [
     {
-      json5: false,
+      fileType: 'JSON',
       options: {
         ignore,
         only,
@@ -207,9 +222,8 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
       }
     },
     {
-      json5: false,
+      fileType: 'JSON',
       options: {
-        babelrc,
         // These should be stripped before options are merged with base
         ignore: null,
         only: null,
@@ -219,15 +233,15 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
       }
     }
   ], new Map(), {
-    unflattenedDefaultOptions: Object.assign([
-      {
-        babelrc,
+    unflattenedDefaultOptions: [{
+      fileType: 'JSON',
+      options: {
         ignore,
         only,
         passPerPreset,
         sourceMaps: sourceMap
       }
-    ], {json5: false})
+    }]
   })
 }
 
@@ -236,7 +250,7 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
   const presetTarget = {[Symbol('preset')]: true}
   test('passes object and function values for plugin and preset targets as-is', reduces, [
     {
-      json5: false,
+      fileType: 'JSON',
       options: {
         plugins: [
           pluginTarget,
@@ -253,9 +267,9 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
       }
     }
   ], new Map(), {
-    unflattenedDefaultOptions: Object.assign([
-      {
-        babelrc: false,
+    unflattenedDefaultOptions: [{
+      fileType: 'JSON',
+      options: {
         plugins: [
           pluginTarget,
           [pluginTarget],
@@ -269,7 +283,7 @@ test('json5 becomes true if some of the configs were parsed using JSON5', reduce
           [presetTarget, {}, 'name']
         ]
       }
-    ], {json5: false})
+    }]
   })
 }
 

@@ -1,4 +1,0 @@
-{
-  extends: 'extended-further.json5',
-  plugins: ['extended'],
-}

@@ -1,7 +1,7 @@
 import Cache from './Cache'
 import codegen from './codegen'
 import {Chains} from './collector'
-import reduceChains, {CompressedOptions, Dependency, Source} from './reduceChains'
+import reduceChains, {ConfigList, Dependency, Source} from './reduceChains'
 import Verifier from './Verifier'
 
 export default class ResolvedConfig {
@@ -11,8 +11,8 @@ export default class ResolvedConfig {
   public readonly envNames: Set<string>
   public readonly fixedSourceHashes: Map<string, string>
   public readonly sources: Source[]
-  public readonly unflattenedDefaultOptions: CompressedOptions
-  public readonly unflattenedEnvOptions: Map<string, CompressedOptions>
+  public readonly unflattenedDefaultOptions: ConfigList
+  public readonly unflattenedEnvOptions: Map<string, ConfigList>
 
   public constructor (chains: Chains, cache?: Cache) {
     this.cache = cache

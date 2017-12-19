@@ -89,6 +89,38 @@ test('fails when parsing invalid JSON', async t => {
   test('truthy but not an object', fail, 'bool-babel')
 }
 
+test('fails when module throws when loaded', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-js', 'syntax-error')))
+  t.is(err.name, 'ParseError')
+  t.is(err.source, fixture('bad-js', 'syntax-error', '.babelrc.js'))
+  t.is(err.parent.name, 'SyntaxError')
+})
+
+test('fails when module exports a promise', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-js', 'promise-from-factory')))
+  t.is(err.name, 'InvalidFileError')
+  t.is(err.source, fixture('bad-js', 'promise-from-factory', '.babelrc.js'))
+})
+
+test('fails when module exports a promise-returning-factory', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-js', 'promise-export')))
+  t.is(err.name, 'InvalidFileError')
+  t.is(err.source, fixture('bad-js', 'promise-export', '.babelrc.js'))
+})
+
+test('fails when module exports a factory that does not configure the cache', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-js', 'no-cache-configuration')))
+  t.is(err.name, 'InvalidFileError')
+  t.is(err.source, fixture('bad-js', 'no-cache-configuration', '.babelrc.js'))
+})
+
+test('fails when module exports a factory that throws', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('bad-js', 'factory-throws')))
+  t.is(err.name, 'ParseError')
+  t.is(err.source, fixture('bad-js', 'factory-throws', '.babelrc.js'))
+  t.is(err.parent.message, 'Oops')
+})
+
 test('fails when a directory contains .babelrc and package.json#babel', async t => {
   const err = await t.throws(collector.fromDirectory(fixture('multiple-sources', 'babelrc-and-pkg')))
   t.is(err.name, 'MultipleSourcesError')
@@ -96,7 +128,21 @@ test('fails when a directory contains .babelrc and package.json#babel', async t 
   t.is(err.otherSource, fixture('multiple-sources', 'babelrc-and-pkg', 'package.json'))
 })
 
-test('fails when extending from a non-existent file', async t => {
+test('fails when a directory contains .babelrc and .babelrc.js', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('multiple-sources', 'babelrc-and-js')))
+  t.is(err.name, 'MultipleSourcesError')
+  t.is(err.source, fixture('multiple-sources', 'babelrc-and-js', '.babelrc'))
+  t.is(err.otherSource, fixture('multiple-sources', 'babelrc-and-js', '.babelrc.js'))
+})
+
+test('fails when a directory contains .babelrc.js and package.json#babel', async t => {
+  const err = await t.throws(collector.fromDirectory(fixture('multiple-sources', 'js-and-pkg')))
+  t.is(err.name, 'MultipleSourcesError')
+  t.is(err.source, fixture('multiple-sources', 'js-and-pkg', '.babelrc.js'))
+  t.is(err.otherSource, fixture('multiple-sources', 'js-and-pkg', 'package.json'))
+})
+
+test('fails when extending from a non-existent .babelrc file', async t => {
   const err = await t.throws(collector.fromConfig(createConfig({
     options: {extends: 'non-existent'},
     source: fixture('source.js')
@@ -106,6 +152,18 @@ test('fails when extending from a non-existent file', async t => {
   t.is(err.source, fixture('source.js'))
   t.is(err.parent.name, 'NoSourceFileError')
   t.is(err.parent.source, fixture('non-existent'))
+})
+
+test('fails when extending from a non-existent .babelrc.js file', async t => {
+  const err = await t.throws(collector.fromConfig(createConfig({
+    options: {extends: 'non-existent.js'},
+    source: fixture('source.js')
+  })))
+  t.is(err.name, 'ExtendsError')
+  t.is(err.clause, 'non-existent.js')
+  t.is(err.source, fixture('source.js'))
+  t.is(err.parent.name, 'NoSourceFileError')
+  t.is(err.parent.source, fixture('non-existent.js'))
 })
 
 test('fails when extending from an invalid file', async t => {

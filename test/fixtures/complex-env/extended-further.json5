@@ -2,7 +2,7 @@
   plugins: ['extended-further'],
   env: {
     foo: {
-      extends: 'extended.json5',
+      extends: 'extended.js',
       plugins: ['extended-further/env/foo']
     }
   }

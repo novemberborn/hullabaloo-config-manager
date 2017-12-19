@@ -5,6 +5,7 @@ import resolveFrom = require('resolve-from')
 
 import Cache, {PluginsAndPresetsMap, PluginsAndPresetsMapValue} from './Cache'
 import {Chains, Config} from './collector'
+import standardizeName from './standardizeName'
 
 export const enum Kind {
   PLUGIN = 'plugin',
@@ -33,10 +34,6 @@ function normalize (arr: any): string[] {
   return arr.map(item => Array.isArray(item) ? item[0] : item)
 }
 
-function isFilePath (ref: string): boolean {
-  return path.isAbsolute(ref) || ref.startsWith('./') || ref.startsWith('../')
-}
-
 function resolveName (name: string, fromDir: string, cache: PluginsAndPresetsMapValue): string | null {
   if (cache.has(name)) return cache.get(name)!
 
@@ -49,30 +46,6 @@ function resolvePackage (filename: string, fromFile: boolean): string | null {
   if (fromFile) return null
 
   return pkgDir.sync(filename)
-}
-
-// Based on https://github.com/babel/babel/blob/master/packages/babel-core/src/config/loading/files/plugins.js#L60:L86
-// but with fewer regular expressions 😉
-function standardizeName (kind: Kind, ref: string): {fromFile: boolean, name: string} { // eslint-disable-line typescript/member-delimiter-style
-  if (isFilePath(ref)) return {fromFile: true, name: ref}
-  if (ref.startsWith('module:')) return {fromFile: false, name: ref.slice(7)}
-
-  if (kind === Kind.PLUGIN) {
-    if (ref.startsWith('babel-plugin-') || ref.startsWith('@babel/plugin-')) return {fromFile: false, name: ref}
-    if (ref.startsWith('@babel/')) return {fromFile: false, name: `@babel/plugin-${ref.slice(7)}`}
-    if (!ref.startsWith('@')) return {fromFile: false, name: `babel-plugin-${ref}`}
-  } else {
-    if (ref.startsWith('babel-preset-') || ref.startsWith('@babel/preset-')) return {fromFile: false, name: ref}
-    if (ref.startsWith('@babel/')) return {fromFile: false, name: `@babel/preset-${ref.slice(7)}`}
-    if (!ref.startsWith('@')) return {fromFile: false, name: `babel-preset-${ref}`}
-  }
-
-  // At this point `ref` is guaranteed to be scoped.
-  const matches = /^(@.+?)\/([^/]+)(.*)/.exec(ref)!
-  const scope = matches[1]
-  const partialName = matches[2]
-  const remainder = matches[3]
-  return {fromFile: false, name: `${scope}/babel-${kind === Kind.PLUGIN ? 'plugin' : 'preset'}-${partialName}${remainder}`}
 }
 
 export interface Entry {

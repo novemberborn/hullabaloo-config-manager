@@ -8,7 +8,7 @@ import {NoSourceFileError} from './errors'
 import readSafe from './readSafe'
 import {Source} from './reduceChains'
 
-function hashSource (source: string, cache?: Cache): Promise<string> {
+function hashSource (source: string, runtimeHash: string | null, cache?: Cache): Promise<string> {
   if (cache && cache.sourceHashes.has(source)) {
     return cache.sourceHashes.get(source)!
   }
@@ -26,13 +26,16 @@ function hashSource (source: string, cache?: Cache): Promise<string> {
     .then(contents => {
       if (!contents) throw new NoSourceFileError(source)
 
+      const inputs: Array<string | Buffer> = runtimeHash === null ? [] : [runtimeHash]
       if (!pkgAccessor) {
-        return md5Hex(contents)
+        inputs.push(contents)
+      } else {
+        const json = JSON.parse(contents.toString('utf8'))
+        const value = dotProp.get(json, pkgAccessor) || {}
+        inputs.push(JSON.stringify(value))
       }
 
-      const json = JSON.parse(contents.toString('utf8'))
-      const value = dotProp.get(json, pkgAccessor) || {}
-      return md5Hex(JSON.stringify(value))
+      return md5Hex(inputs)
     })
 
   if (cache) {
@@ -45,7 +48,7 @@ export default function hashSources (sources: Source[], fixedHashes?: Map<string
   const promises = sources.map(item => {
     return fixedHashes && fixedHashes.has(item.source)
       ? fixedHashes.get(item.source)!
-      : hashSource(item.source, cache)
+      : hashSource(item.source, item.runtimeHash, cache)
   })
   return Promise.all(promises)
 }
