@@ -155,7 +155,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        pluginIndex,
+        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'plugin@extended-by-babelrc'
         },
@@ -171,7 +171,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     ],
     presets: [
       [
-        presetIndex,
+        require(presetIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -196,7 +196,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        pluginIndex,
+        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'plugin@extended-by-babelrc'
         },
@@ -227,7 +227,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     ],
     presets: [
       [
-        presetIndex,
+        require(presetIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -295,7 +295,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        pluginIndex,
+        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'plugin@extended-by-babelrc'
         },
@@ -325,7 +325,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        presetIndex,
+        require(presetIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -362,7 +362,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        pluginIndex,
+        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'plugin@extended-by-babelrc'
         },
@@ -428,7 +428,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        presetIndex,
+        require(presetIndex), // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },

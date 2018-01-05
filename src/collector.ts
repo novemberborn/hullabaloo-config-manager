@@ -9,6 +9,7 @@ import Cache, {isUnrestrictedModuleSource, EnvModuleSource, ModuleSource, Unrest
 import cloneOptions from './cloneOptions'
 import currentEnv from './currentEnv'
 import {ExtendsError, InvalidFileError, MultipleSourcesError, NoSourceFileError, ParseError} from './errors'
+import loadConfigModule, {LoadedConfigModule} from './loadConfigModule'
 import SimulatedBabelCache from './SimulatedBabelCache'
 import readSafe from './readSafe'
 
@@ -78,7 +79,7 @@ function parsePackage (source: string, buffer: Buffer): BabelOptions | null {
 }
 
 function cloneCachedModule<T extends (ModuleSource | UnrestrictedModuleSource)> (obj: T): T {
-  return Object.assign({}, obj, {options: cloneOptions(obj.options)})
+  return Object.assign({}, obj, {runtimeDependencies: new Map(obj.runtimeDependencies), options: cloneOptions(obj.options)})
 }
 
 interface ResolvedModule extends ModuleSource {
@@ -98,35 +99,40 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
 
   if (resolveFrom.silent(path.dirname(source), source) === null) return null
 
-  let configModule: any
+  let configModule: LoadedConfigModule
   try {
-    // TODO: Capture dependencies for hashing by intercepting require() calls.
-    // Need to track dependencies loaded as the module is evaluated, and during
-    // factory calls.
-    configModule = require(source) // eslint-disable-line import/no-dynamic-require
+    configModule = loadConfigModule(source)
   } catch (err) {
     throw new ParseError(source, err)
   }
 
-  const options = configModule && configModule.__esModule
-    ? configModule.default
-    : configModule
-
+  const dependencies = configModule.dependencies
+  const options = configModule.options
   if (typeof options !== 'function') {
     if (options && typeof options.then === 'function') throw new InvalidFileError(source)
 
     const validOptions = validateOptions(source, options)
-    const result: UnrestrictedModuleSource = {options: validOptions, runtimeHash: null, unrestricted: true}
+    const result: UnrestrictedModuleSource = {
+      options: validOptions,
+      runtimeDependencies: dependencies,
+      runtimeHash: null,
+      unrestricted: true
+    }
     if (cache) cache.moduleSources.set(source, cloneCachedModule(result))
     return cloneCachedModule(result)
   }
+
+  const staticDependencies = Array.from(dependencies)
+  dependencies.clear()
 
   const factory = (envName: string) => { // eslint-disable-line no-shadow
     let unrestricted = true
     const babelCache = new SimulatedBabelCache<{envName: string}>({envName})
 
+    let factoryDependencies: Array<[string, string]>
     let possibleOptions: any = null
     try {
+      dependencies.clear()
       possibleOptions = options({
         cache: babelCache.api,
         env: () => {
@@ -140,6 +146,9 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
       })
     } catch (err) {
       throw new ParseError(source, err)
+    } finally {
+      factoryDependencies = Array.from(dependencies)
+      dependencies.clear()
     }
     babelCache.seal()
 
@@ -148,6 +157,7 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
 
     return {
       options: validateOptions(source, possibleOptions),
+      runtimeDependencies: new Map(staticDependencies.concat(factoryDependencies)),
       runtimeHash: babelCache.hash(),
       unrestricted: unrestricted && !babelCache.never
     }
@@ -167,6 +177,7 @@ export class Config {
   public readonly fileType: FileType
   public readonly hash: string | null
   public readonly options: BabelOptions
+  public readonly runtimeDependencies: Map<string, string> | null
   public readonly runtimeHash: string | null
   public readonly source: string
 
@@ -182,6 +193,7 @@ export class Config {
     options: BabelOptions,
     source: string,
     fileType: FileType,
+    runtimeDependencies: Map<string, string> | null,
     runtimeHash: string | null
   ) {
     this.dir = dir
@@ -189,6 +201,7 @@ export class Config {
     this.fileType = fileType
     this.hash = hash
     this.options = options
+    this.runtimeDependencies = runtimeDependencies
     this.runtimeHash = typeof runtimeHash === 'string' ? runtimeHash : null
     this.source = source
 
@@ -199,7 +212,7 @@ export class Config {
   }
 
   public copyWithEnv (envName: string, options: BabelOptions, runtimeHash: string | null): Config {
-    return new Config(this.dir, envName, this.hash, options, this.source, this.fileType, runtimeHash)
+    return new Config(this.dir, envName, this.hash, options, this.source, this.fileType, this.runtimeDependencies, runtimeHash)
   }
 
   public extend (config: Config): void {
@@ -239,7 +252,7 @@ class FactoryConfig extends Config {
     source: string,
     factory: (envName: string) => ModuleSource
   ) {
-    super(dir, null, null, {}, source, FileType.JS, null)
+    super(dir, null, null, {}, source, FileType.JS, null, null)
     this.factory = factory
   }
 }
@@ -270,7 +283,7 @@ async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?
       throw new MultipleSourcesError(fileSource, jsSource)
     }
 
-    return new Config(dir, null, null, parseFile(fileSource, fileContents), fileSource, FileType.JSON5, null)
+    return new Config(dir, null, null, parseFile(fileSource, fileContents), fileSource, FileType.JSON5, null, null)
   }
 
   const packageContents = await fromPackage
@@ -278,15 +291,33 @@ async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?
     const options = parsePackage(packageSource, packageContents)
     if (options) {
       if (jsOptions) throw new MultipleSourcesError(jsSource, packageSource)
-      return new Config(dir, null, null, options, packageSource, FileType.JSON, null)
+      return new Config(dir, null, null, options, packageSource, FileType.JSON, null, null)
     }
   }
 
   if (jsOptions) {
     if (jsOptions.unrestricted) {
-      return new Config(dir, null, null, jsOptions.options, jsSource, FileType.JS, jsOptions.runtimeHash)
+      return new Config(
+        dir,
+        null,
+        null,
+        jsOptions.options,
+        jsSource,
+        FileType.JS,
+        jsOptions.runtimeDependencies,
+        jsOptions.runtimeHash
+      )
     } else if (expectedEnvNames.length === 0) {
-      return new Config(dir, envName, null, jsOptions.options, jsSource, FileType.JS, jsOptions.runtimeHash)
+      return new Config(
+        dir,
+        envName,
+        null,
+        jsOptions.options,
+        jsSource,
+        FileType.JS,
+        jsOptions.runtimeDependencies,
+        jsOptions.runtimeHash
+      )
     } else {
       return new FactoryConfig(dir, jsSource, jsOptions.factory!)
     }
@@ -308,9 +339,27 @@ async function resolveFile (source: string, expectedEnvNames: string[], cache?: 
     if (!jsOptions) throw new NoSourceFileError(source)
 
     if (jsOptions.unrestricted) {
-      return new Config(dir, null, null, jsOptions.options, source, FileType.JS, jsOptions.runtimeHash)
+      return new Config(
+        dir,
+        null,
+        null,
+        jsOptions.options,
+        source,
+        FileType.JS,
+        jsOptions.runtimeDependencies,
+        jsOptions.runtimeHash
+      )
     } else if (expectedEnvNames.length === 0) {
-      return new Config(dir, envName, null, jsOptions.options, source, FileType.JS, jsOptions.runtimeHash)
+      return new Config(
+        dir,
+        envName,
+        null,
+        jsOptions.options,
+        source,
+        FileType.JS,
+        jsOptions.runtimeDependencies,
+        jsOptions.runtimeHash
+      )
     } else {
       return new FactoryConfig(dir, source, jsOptions.factory!)
     }
@@ -321,7 +370,7 @@ async function resolveFile (source: string, expectedEnvNames: string[], cache?: 
   // "extends" directives are resolved.
   if (!contents) throw new NoSourceFileError(source)
 
-  return new Config(path.dirname(source), null, null, parseFile(source, contents), source, FileType.JSON5, null)
+  return new Config(path.dirname(source), null, null, parseFile(source, contents), source, FileType.JSON5, null, null)
 }
 
 export type Chain = Set<Config>

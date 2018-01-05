@@ -2,6 +2,7 @@ import BabelOptions from './BabelOptions'
 
 export interface ModuleSource {
   options: BabelOptions
+  runtimeDependencies: Map<string, string>
   runtimeHash: string | null
   unrestricted: boolean
 }

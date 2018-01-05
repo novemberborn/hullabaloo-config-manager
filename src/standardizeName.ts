@@ -1,10 +1,5 @@
-import path = require('path')
-
+import isFilePath from './isFilePath'
 import {Kind} from './resolvePluginsAndPresets'
-
-function isFilePath (ref: string): boolean {
-  return path.isAbsolute(ref) || ref.startsWith('./') || ref.startsWith('../')
-}
 
 // Based on https://github.com/babel/babel/blob/master/packages/babel-core/src/config/loading/files/plugins.js#L60:L86
 // but with fewer regular expressions 😉
