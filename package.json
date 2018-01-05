@@ -45,6 +45,7 @@
     "lodash.merge": "^4.6.0",
     "md5-hex": "^2.0.0",
     "package-hash": "^2.0.0",
+    "pirates": "^3.0.2",
     "pkg-dir": "^2.0.0",
     "resolve-from": "^4.0.0"
   },

@@ -1,11 +1,17 @@
+const plugin = require('plugin') // eslint-disable-line import/no-extraneous-dependencies
+
 module.exports = options => {
   options.cache.forever()
   return {
     plugins: [
-      ['module:plugin', {label: 'plugin@extended-by-babelrc'}, 'plugin@extended-by-babelrc']
+      [plugin, {label: 'plugin@extended-by-babelrc'}, 'plugin@extended-by-babelrc']
     ],
     presets: [
-      ['module:preset', {label: 'preset@extended-by-babelrc'}, 'preset@extended-by-babelrc']
+      [
+        require('preset'), // eslint-disable-line import/no-extraneous-dependencies
+        {label: 'preset@extended-by-babelrc'},
+        'preset@extended-by-babelrc'
+      ]
     ],
     env: {
       foo: {

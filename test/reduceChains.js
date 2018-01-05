@@ -87,11 +87,23 @@ const reduces = (t, defaultChain, envChains, expected) => {
     source: '4',
     runtimeHash: null
   }
+  const five = {
+    fileType: 'JS',
+    options: {
+      plugins: ['/thud']
+    },
+    dir: '/',
+    envName: 'foo',
+    source: '5',
+    runtimeDependencies: new Map([['/thud', '/thud']]),
+    runtimeHash: null
+  }
 
-  test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four]]]), {
+  test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four, five]]]), {
     dependencies: [
       {default: true, envs: new Set(['foo']), filename: './bar', fromPackage: null},
       {default: true, envs: new Set(['foo']), filename: './baz', fromPackage: null},
+      {default: false, envs: new Set(['foo']), filename: '/thud', fromPackage: null},
       {default: true, envs: new Set(['foo']), filename: 'babel-plugin-foo', fromPackage: '.'},
       {default: false, envs: new Set(['foo']), filename: 'babel-plugin-quux', fromPackage: '.'},
       {default: true, envs: new Set(['foo']), filename: 'babel-preset-qux', fromPackage: '.'}
@@ -102,7 +114,8 @@ const reduces = (t, defaultChain, envChains, expected) => {
       {default: true, envs: new Set(['foo']), source: '1', runtimeHash: null},
       {default: true, envs: new Set(['foo']), source: '2', runtimeHash: null},
       {default: false, envs: new Set(['foo']), source: '3', runtimeHash: null},
-      {default: false, envs: new Set(['foo']), source: '4', runtimeHash: null}
+      {default: false, envs: new Set(['foo']), source: '4', runtimeHash: null},
+      {default: false, envs: new Set(['foo']), source: '5', runtimeHash: null}
     ],
     unflattenedDefaultOptions: [{
       fileType: 'JSON',
@@ -138,6 +151,11 @@ const reduces = (t, defaultChain, envChains, expected) => {
           ],
           sourceMaps: false
         }
+      }, {
+        dir: '/',
+        envName: 'foo',
+        fileType: 'JS',
+        source: '5'
       }]]
     ])
   })

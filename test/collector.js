@@ -651,32 +651,32 @@ test('supports __esModule factory default export in .babelrc.js files',
 
 test('a cache can be used for factory modules', async t => {
   {
-    const {getCount} = require('./fixtures/js/cache-usage/forever/.babelrc.js')
     const sharedCache = prepareCache()
     await Promise.all([
       collector.fromDirectory(fixture('js', 'cache-usage', 'forever'), ['foo'], sharedCache),
       collector.fromDirectory(fixture('js', 'cache-usage', 'forever'), ['bar'], sharedCache)
     ])
+    const {getCount} = require('./fixtures/js/cache-usage/forever/.babelrc.js')
     t.is(getCount(), 1, 'forever')
   }
 
   {
-    const {getCount} = require('./fixtures/js/cache-usage/never/.babelrc.js')
     const sharedCache = prepareCache()
     await Promise.all([
       collector.fromDirectory(fixture('js', 'cache-usage', 'never'), ['foo'], sharedCache),
       collector.fromDirectory(fixture('js', 'cache-usage', 'never'), ['bar'], sharedCache)
     ])
+    const {getCount} = require('./fixtures/js/cache-usage/never/.babelrc.js')
     t.is(getCount(), 2, 'never')
   }
 
   {
-    const {getCount} = require('./fixtures/js/cache-usage/env/.babelrc.js')
     const sharedCache = prepareCache()
     await Promise.all([
       collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['foo'], sharedCache),
       collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['bar'], sharedCache)
     ])
+    const {getCount} = require('./fixtures/js/cache-usage/env/.babelrc.js')
     t.is(getCount(), 2, 'env')
 
     await collector.fromDirectory(fixture('js', 'cache-usage', 'env'), ['foo'], sharedCache)
@@ -687,12 +687,12 @@ test('a cache can be used for factory modules', async t => {
   }
 
   {
-    const {getCount} = require('./fixtures/js/cache-usage/static/.babelrc.js')
     const sharedCache = prepareCache()
     await Promise.all([
       collector.fromDirectory(fixture('js', 'cache-usage', 'static'), [], sharedCache),
       collector.fromDirectory(fixture('js', 'cache-usage', 'static'), [], sharedCache)
     ])
+    const {getCount} = require('./fixtures/js/cache-usage/static/.babelrc.js')
     t.is(getCount(), 1, 'static')
   }
 })

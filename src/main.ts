@@ -41,7 +41,7 @@ export function createConfig (options: CreateOptions): collector.Config {
     throw new TypeError("'options' must not have an 'envName' property")
   }
 
-  return new collector.Config(dir, null, hash, babelOptions, source, fileType, null)
+  return new collector.Config(dir, null, hash, babelOptions, source, fileType, null, null)
 }
 
 export async function fromConfig (baseConfig: collector.Config, options?: FromOptions): Promise<ResolvedConfig> {

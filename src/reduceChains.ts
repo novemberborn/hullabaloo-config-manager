@@ -1,9 +1,11 @@
 import merge = require('lodash.merge')
+import pkgDir = require('pkg-dir')
 
 import BabelOptions, {PluginOrPresetItem} from './BabelOptions'
 import Cache from './Cache'
 import cloneOptions from './cloneOptions'
 import {Chain, Chains, FileType} from './collector'
+import isFilePath from './isFilePath'
 import normalizeOptions from './normalizeOptions'
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
 
@@ -148,6 +150,13 @@ function mergeChain (
   for (const item of queue) {
     const config = item.config
     trackSource(sourceMap, config.source, config.runtimeHash, envName)
+    if (config.runtimeDependencies) {
+      for (const dependency of config.runtimeDependencies) {
+        const filename = dependency[0]
+        const fromPackage = isFilePath(dependency[1]) ? null : pkgDir.sync(filename)
+        trackDependency(dependencyMap, filename, fromPackage, envName)
+      }
+    }
     if (config.hash) {
       fixedSourceHashes.set(config.source, config.hash)
     }
