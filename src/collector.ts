@@ -4,7 +4,7 @@ import json5 = require('json5')
 import md5Hex = require('md5-hex')
 import resolveFrom = require('resolve-from')
 
-import BabelOptions, {ReducedOptions} from './BabelOptions'
+import BabelOptions, {LimitedOptions} from './BabelOptions'
 import Cache, {isUnrestrictedModuleSource, EnvModuleSource, ModuleSource, UnrestrictedModuleSource} from './Cache'
 import cloneOptions from './cloneOptions'
 import currentEnv from './currentEnv'
@@ -227,13 +227,13 @@ export class Config {
     this.extends = config
   }
 
-  public takeEnvs (): Map<string, ReducedOptions> {
+  public takeEnvs (): Map<string, LimitedOptions> {
     const env = this.options.env
     delete this.options.env
 
     if (!env) return new Map()
 
-    const take = Object.keys(env).map<[string, ReducedOptions]>(name => [name, env[name]])
+    const take = Object.keys(env).map<[string, LimitedOptions]>(name => [name, env[name]])
     return new Map(take)
   }
 

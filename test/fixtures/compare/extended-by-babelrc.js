@@ -4,7 +4,8 @@ module.exports = options => {
   options.cache.forever()
   return {
     plugins: [
-      [plugin, {label: 'plugin@extended-by-babelrc'}, 'plugin@extended-by-babelrc']
+      ['module:plugin', {label: 'plugin@extended-by-babelrc.1'}],
+      [plugin, {label: 'plugin@extended-by-babelrc.2'}, 'plugin@extended-by-babelrc.2']
     ],
     presets: [
       [
@@ -16,7 +17,8 @@ module.exports = options => {
     env: {
       foo: {
         plugins: [
-          ['module:plugin', {label: 'plugin@extended-by-babelrc.foo'}, 'plugin@extended-by-babelrc.foo']
+          ['module:plugin', {label: 'plugin@extended-by-babelrc.1.foo'}],
+          ['module:plugin', {label: 'plugin@extended-by-babelrc.2.foo'}, 'plugin@extended-by-babelrc.2']
         ],
         presets: [
           ['module:preset', {label: 'preset@extended-by-babelrc.foo'}, 'preset@extended-by-babelrc.foo']

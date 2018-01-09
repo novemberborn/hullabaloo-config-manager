@@ -35,7 +35,7 @@ test('createConfig() allows dir to be specified separately from source', async t
   t.deepEqual(configModule.getOptions(), {
     babelrc: false,
     envName: 'test',
-    plugins: [pluginIndex]
+    plugins: [[pluginIndex, undefined, '🤡🎪🎟.0']]
   })
 })
 
@@ -155,18 +155,32 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.1'
+        },
+        '🤡🎪🎟.0'
+      ],
+      [
         require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
-          label: 'plugin@extended-by-babelrc'
+          label: 'plugin@extended-by-babelrc.2'
         },
-        'plugin@extended-by-babelrc'
+        'plugin@extended-by-babelrc.2'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@babelrc'
+          label: 'plugin@babelrc.2'
         },
-        'plugin@babelrc'
+        'plugin@babelrc.2'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.3'
+        },
+        'plugin@babelrc.3'
       ]
     ],
     presets: [
@@ -196,34 +210,45 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
+        pluginIndex,
         {
-          label: 'plugin@extended-by-babelrc'
+          label: 'plugin@babelrc.1.foo'
         },
-        'plugin@extended-by-babelrc'
+        '🤡🎪🎟.0'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@extended-by-babelrc.foo'
+          label: 'plugin@extended-by-babelrc.2.foo'
         },
-        'plugin@extended-by-babelrc.foo'
+        'plugin@extended-by-babelrc.2'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@babelrc'
+          label: 'plugin@babelrc.2.foo'
         },
-        'plugin@babelrc'
+        'plugin@babelrc.2'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.3'
+        },
+        'plugin@babelrc.3'
       ],
       [
         envPluginIndex,
         {
-          label: 'plugin@babelrc.foo'
+          label: 'env-plugin@babelrc.foo'
         },
         'plugin@babelrc.foo'
       ],
-      pluginDefaultOptsIndex
+      [
+        pluginDefaultOptsIndex,
+        undefined,
+        '🤡🎪🎟.2'
+      ]
     ],
     presets: [
       [
@@ -295,18 +320,32 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.1'
+        },
+        '🤡🎪🎟.0'
+      ],
+      [
         require(pluginIndex), // eslint-disable-line import/no-dynamic-require
         {
-          label: 'plugin@extended-by-babelrc'
+          label: 'plugin@extended-by-babelrc.2'
         },
-        'plugin@extended-by-babelrc'
+        'plugin@extended-by-babelrc.2'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@babelrc'
+          label: 'plugin@babelrc.2'
         },
-        'plugin@babelrc'
+        'plugin@babelrc.2'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.3'
+        },
+        'plugin@babelrc.3'
       ],
       [
         pluginIndex,
@@ -362,34 +401,45 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   t.deepEqual(configModule.getOptions(null, cache), {
     plugins: [
       [
-        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
+        pluginIndex,
         {
-          label: 'plugin@extended-by-babelrc'
+          label: 'plugin@babelrc.1.foo'
         },
-        'plugin@extended-by-babelrc'
+        '🤡🎪🎟.0'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@extended-by-babelrc.foo'
+          label: 'plugin@extended-by-babelrc.2.foo'
         },
-        'plugin@extended-by-babelrc.foo'
+        'plugin@extended-by-babelrc.2'
       ],
       [
         pluginIndex,
         {
-          label: 'plugin@babelrc'
+          label: 'plugin@babelrc.2.foo'
         },
-        'plugin@babelrc'
+        'plugin@babelrc.2'
+      ],
+      [
+        pluginIndex,
+        {
+          label: 'plugin@babelrc.3'
+        },
+        'plugin@babelrc.3'
       ],
       [
         envPluginIndex,
         {
-          label: 'plugin@babelrc.foo'
+          label: 'env-plugin@babelrc.foo'
         },
         'plugin@babelrc.foo'
       ],
-      pluginDefaultOptsIndex,
+      [
+        pluginDefaultOptsIndex,
+        undefined,
+        '🤡🎪🎟.2'
+      ],
       [
         pluginIndex,
         {
@@ -508,12 +558,13 @@ test('fromConfig() works without cache', async t => {
 test('prepareCache()', t => {
   const cache = prepareCache()
   t.deepEqual(Object.keys(cache), [
-    'dependencyHashes', 'fileExistence', 'files', 'moduleSources', 'pluginsAndPresets', 'sourceHashes'
+    'dependencyHashes', 'fileExistence', 'files', 'moduleSources', 'nameMap', 'pluginsAndPresets', 'sourceHashes'
   ])
   t.true(cache.dependencyHashes instanceof Map)
   t.true(cache.fileExistence instanceof Map)
   t.true(cache.files instanceof Map)
   t.true(cache.moduleSources instanceof Map)
+  t.true(cache.nameMap instanceof Map)
   t.true(cache.pluginsAndPresets instanceof Map)
   t.true(cache.sourceHashes instanceof Map)
 })

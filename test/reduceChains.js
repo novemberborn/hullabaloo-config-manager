@@ -1,4 +1,6 @@
+import path from 'path'
 import test from 'ava'
+import mockRequire from 'mock-require'
 import proxyquire from 'proxyquire'
 
 import pkgDirMock from './helpers/pkgDirMock'
@@ -8,11 +10,20 @@ const {default: reduceChains} = proxyquire('../build/reduceChains', {
     'pkg-dir': pkgDirMock,
     'resolve-from': {
       silent (dir, ref) {
-        return ref
+        if (ref.startsWith('./')) return path.posix.join('~', ref + '.js')
+        if (ref.startsWith('/')) return ref + '.js'
+        return path.posix.join('~', ref, 'index.js')
       }
     }
   })
 })
+
+mockRequire('~/babel-plugin-foo/index.js', {})
+mockRequire('~/babel-plugin-quux/index.js', {})
+mockRequire('~/babel-preset-qux/index.js', {})
+mockRequire('~/bar.js', {})
+mockRequire('~/baz.js', {})
+mockRequire('/thud.js', {})
 
 const reduces = (t, defaultChain, envChains, expected) => {
   const chains = {
@@ -95,18 +106,18 @@ const reduces = (t, defaultChain, envChains, expected) => {
     dir: '/',
     envName: 'foo',
     source: '5',
-    runtimeDependencies: new Map([['/thud', '/thud']]),
+    runtimeDependencies: new Map([['/thud.js', '/thud']]),
     runtimeHash: null
   }
 
   test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four, five]]]), {
     dependencies: [
-      {default: true, envs: new Set(['foo']), filename: './bar', fromPackage: null},
-      {default: true, envs: new Set(['foo']), filename: './baz', fromPackage: null},
-      {default: false, envs: new Set(['foo']), filename: '/thud', fromPackage: null},
-      {default: true, envs: new Set(['foo']), filename: 'babel-plugin-foo', fromPackage: '.'},
-      {default: false, envs: new Set(['foo']), filename: 'babel-plugin-quux', fromPackage: '.'},
-      {default: true, envs: new Set(['foo']), filename: 'babel-preset-qux', fromPackage: '.'}
+      {default: false, envs: new Set(['foo']), filename: '/thud.js', fromPackage: null},
+      {default: true, envs: new Set(['foo']), filename: '~/babel-plugin-foo/index.js', fromPackage: '~/babel-plugin-foo'},
+      {default: false, envs: new Set(['foo']), filename: '~/babel-plugin-quux/index.js', fromPackage: '~/babel-plugin-quux'},
+      {default: true, envs: new Set(['foo']), filename: '~/babel-preset-qux/index.js', fromPackage: '~/babel-preset-qux'},
+      {default: true, envs: new Set(['foo']), filename: '~/bar.js', fromPackage: null},
+      {default: true, envs: new Set(['foo']), filename: '~/baz.js', fromPackage: null}
     ],
     envNames: new Set(['foo']),
     sources: [
@@ -122,13 +133,12 @@ const reduces = (t, defaultChain, envChains, expected) => {
       options: {
         parserOpts: {foo: 1},
         plugins: [
-          'babel-plugin-foo',
-          ['./baz', {}],
-          'babel-plugin-foo'
+          {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
+          {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'}
         ],
         presets: [
-          ['./bar', {hello: 'world'}],
-          'babel-preset-qux'
+          {filename: '~/bar.js', options: {hello: 'world'}, name: '🤡🎪🎟.2'},
+          {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
         ],
         sourceMaps: false
       }
@@ -139,15 +149,13 @@ const reduces = (t, defaultChain, envChains, expected) => {
         options: {
           parserOpts: {foo: 2},
           plugins: [
-            'babel-plugin-foo',
-            ['./baz', {}],
-            'babel-plugin-foo',
-            'babel-plugin-quux'
+            {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
+            {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'},
+            {filename: '~/babel-plugin-quux/index.js', name: '🤡🎪🎟.8'}
           ],
           presets: [
-            ['./bar', {hello: 'world'}],
-            'babel-preset-qux',
-            ['./bar', {goodbye: true}]
+            {filename: '~/bar.js', options: {goodbye: true}, name: '🤡🎪🎟.2'},
+            {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
           ],
           sourceMaps: false
         }
@@ -264,23 +272,29 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
 }
 
 {
-  const pluginTarget = {[Symbol('plugin')]: true}
-  const presetTarget = {[Symbol('preset')]: true}
-  test('passes object and function values for plugin and preset targets as-is', reduces, [
+  const pluginTarget1 = {[Symbol('plugin1')]: true}
+  const pluginTarget2 = {[Symbol('plugin2')]: true}
+  const pluginTarget3 = {[Symbol('plugin3')]: true}
+  const pluginTarget4 = {[Symbol('plugin4')]: true}
+  const presetTarget1 = {[Symbol('preset1')]: true}
+  const presetTarget2 = {[Symbol('preset2')]: true}
+  const presetTarget3 = {[Symbol('preset3')]: true}
+  const presetTarget4 = {[Symbol('preset4')]: true}
+  test('preserves object and function values for plugin and preset targets', reduces, [
     {
       fileType: 'JSON',
       options: {
         plugins: [
-          pluginTarget,
-          [pluginTarget],
-          [pluginTarget, {}],
-          [pluginTarget, {}, 'name']
+          pluginTarget1,
+          [pluginTarget2],
+          [pluginTarget3, {}],
+          [pluginTarget4, {}, 'name']
         ],
         presets: [
-          presetTarget,
-          [presetTarget],
-          [presetTarget, {}],
-          [presetTarget, {}, 'name']
+          presetTarget1,
+          [presetTarget2],
+          [presetTarget3, {}],
+          [presetTarget4, {}, 'name']
         ]
       }
     }
@@ -289,16 +303,16 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
       fileType: 'JSON',
       options: {
         plugins: [
-          pluginTarget,
-          [pluginTarget],
-          [pluginTarget, {}],
-          [pluginTarget, {}, 'name']
+          {target: pluginTarget1, name: '🤡🎪🎟.0'},
+          {target: pluginTarget2, name: '🤡🎪🎟.1'},
+          {target: pluginTarget3, options: {}, name: '🤡🎪🎟.2'},
+          {target: pluginTarget4, options: {}, name: 'name'}
         ],
         presets: [
-          presetTarget,
-          [presetTarget],
-          [presetTarget, {}],
-          [presetTarget, {}, 'name']
+          {target: presetTarget1, name: '🤡🎪🎟.3'},
+          {target: presetTarget2, name: '🤡🎪🎟.4'},
+          {target: presetTarget3, options: {}, name: '🤡🎪🎟.5'},
+          {target: presetTarget4, options: {}, name: 'name'}
         ]
       }
     }]
