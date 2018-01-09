@@ -1,4 +1,4 @@
-import BabelOptions from './BabelOptions'
+import BabelOptions, {PluginOrPresetTarget} from './BabelOptions'
 
 export interface ModuleSource {
   options: BabelOptions
@@ -15,6 +15,8 @@ export interface EnvModuleSource {
 }
 export type ModuleSourcesMap = Map<string, UnrestrictedModuleSource | EnvModuleSource>
 
+export type NameMap = Map<PluginOrPresetTarget, string>
+
 export type PluginsAndPresetsMapValue = Map<string, string | null>
 export type PluginsAndPresetsMap = Map<string, PluginsAndPresetsMapValue>
 
@@ -23,6 +25,7 @@ export default interface Cache {
   fileExistence: Map<string, Promise<boolean>>
   files: Map<string, Promise<Buffer | null>>
   moduleSources: ModuleSourcesMap
+  nameMap: NameMap
   pluginsAndPresets: PluginsAndPresetsMap
   sourceHashes: Map<string, Promise<string>>
 }
@@ -33,6 +36,7 @@ export function prepare (): Cache {
     fileExistence: new Map(),
     files: new Map(),
     moduleSources: new Map(),
+    nameMap: new Map(),
     pluginsAndPresets: new Map(),
     sourceHashes: new Map()
   }

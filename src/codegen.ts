@@ -20,12 +20,6 @@ ${JSON.stringify(config.envName !== null)})`
 }
 
 function generateFactory (unflattened: ConfigList): string {
-  const config = unflattened[0]
-  if (!isModuleConfig(config) && unflattened.length === 1) {
-    const body = indentString(`return Object.assign(${printConfig(config)}, {babelrc: false, envName})`, 2)
-    return `envName => {\n${body}\n}`
-  }
-
   return `(envName, cache) => {
   return Object.assign(mergeConfigs([
 ${unflattened.map(item => indentString(printConfig(item), 4)).join(',\n')}
@@ -39,6 +33,8 @@ export default function codegen (resolvedConfig: ResolvedConfig): string {
 const process = require("process")
 const merge = require(${JSON.stringify(require.resolve('lodash.merge'))})
 const cloneOptions = require(${JSON.stringify(require.resolve('./cloneOptions'))}).default
+const getPluginOrPresetName = require(${JSON.stringify(require.resolve('./getPluginOrPresetName'))}).default
+const mergePluginsOrPresets = require(${JSON.stringify(require.resolve('./mergePluginsOrPresets'))}).default
 const normalizeSomeOptions = require(${JSON.stringify(require.resolve('./normalizeOptions'))}).default
 const standardizeName = require(${JSON.stringify(require.resolve('./standardizeName'))}).default
 
@@ -48,27 +44,43 @@ function resolvePluginOrPreset (resolutionCache, kind, ref) {
   return resolutionCache.get(name)
 }
 
-function normalizePluginsAndPresets (resolutionCache, options) {
+function normalizePluginsAndPresets (resolutionCache, nameMap, options) {
   if (Array.isArray(options.plugins)) {
-    options.plugins = options.plugins.map(ref => {
-      if (typeof ref === 'string') {
-        ref = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PLUGIN)}, ref)
-      } else if (Array.isArray(ref) && typeof ref[0] === 'string') {
-        ref[0] = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PLUGIN)}, ref[0])
+    options.plugins = options.plugins.map(item => {
+      if (Array.isArray(item)) {
+        const target = item[0]
+        if (typeof target !== 'string') {
+          return {target, options: item[1], name: item.length > 2 ? item[2] : getPluginOrPresetName(nameMap, target)}
+        }
+
+        const filename = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PLUGIN)}, target)
+        return {filename, options: item[1], name: item.length > 2 ? item[2] : getPluginOrPresetName(nameMap, filename)}
       }
-      return ref
+      if (typeof item === 'string') {
+        const filename = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PLUGIN)}, item)
+        return {filename, name: getPluginOrPresetName(nameMap, filename)}
+      }
+      return {target: item, name: getPluginOrPresetName(nameMap, item)}
     })
   } else {
     delete options.plugins
   }
   if (Array.isArray(options.presets)) {
-    options.presets = options.presets.map(ref => {
-      if (typeof ref === 'string') {
-        ref = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PRESET)}, ref)
-      } else if (Array.isArray(ref) && typeof ref[0] === 'string') {
-        ref[0] = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PRESET)}, ref[0])
+    options.presets = options.presets.map(item => {
+      if (Array.isArray(item)) {
+        const target = item[0]
+        if (typeof target !== 'string') {
+          return {target, options: item[1], name: item.length > 2 ? item[2] : getPluginOrPresetName(nameMap, target)}
+        }
+
+        const filename = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PRESET)}, target)
+        return {filename, options: item[1], name: item.length > 2 ? item[2] : getPluginOrPresetName(nameMap, filename)}
       }
-      return ref
+      if (typeof item === 'string') {
+        const filename = resolvePluginOrPreset(resolutionCache, ${JSON.stringify(Kind.PRESET)}, item)
+        return {filename, name: getPluginOrPresetName(nameMap, filename)}
+      }
+      return {target: item, name: getPluginOrPresetName(nameMap, item)}
     })
   } else {
     delete options.presets
@@ -89,30 +101,39 @@ specific to the '\${envName}' environment, for '\${source}', in the cache\`)
   delete options.env
   delete options.extends
   normalizeSomeOptions(options)
-  normalizePluginsAndPresets(cache.pluginsAndPresets.get(dir), options)
+  normalizePluginsAndPresets(cache.pluginsAndPresets.get(dir), cache.nameMap, options)
   return options
 }
 
 function mergeConfigs (configs) {
-  return configs.reduce((target, config) => {
-    const plugins = config.plugins
-    const presets = config.presets
+  const merged = configs.reduce((target, options) => {
+    const plugins = options.plugins
+    const presets = options.presets
 
-    delete config.plugins
-    delete config.presets
+    delete options.plugins
+    delete options.presets
 
     if (plugins) {
-      target.plugins = target.plugins
-        ? target.plugins.concat(plugins)
-        : plugins
+      mergePluginsOrPresets(target.plugins, plugins)
     }
     if (presets) {
-      target.presets = target.presets
-        ? target.presets.concat(presets)
-        : presets
+      mergePluginsOrPresets(target.presets, presets)
     }
-    return merge(target, config)
-  })
+    return merge(target, options)
+  }, {plugins: [], presets: []})
+
+  if (merged.plugins.length > 0) {
+    merged.plugins = merged.plugins.map(item => ([item.target || item.filename, item.options, item.name]))
+  } else {
+    delete merged.plugins
+  }
+  if (merged.presets.length > 0) {
+    merged.presets = merged.presets.map(item => ([item.target || item.filename, item.options, item.name]))
+  } else {
+    delete merged.presets
+  }
+
+  return merged
 }
 
 const defaultOptions = ${generateFactory(resolvedConfig.unflattenedDefaultOptions)}

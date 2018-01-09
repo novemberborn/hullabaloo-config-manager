@@ -1,7 +1,9 @@
 {
   extends: './extended-by-babelrc.js',
   plugins: [
-    ['module:plugin', {label: 'plugin@babelrc'}, 'plugin@babelrc']
+    ['module:plugin', {label: 'plugin@babelrc.1'}],
+    ['module:plugin', {label: 'plugin@babelrc.2'}, 'plugin@babelrc.2'],
+    ['module:plugin', {label: 'plugin@babelrc.3'}, 'plugin@babelrc.3']
   ],
   presets: [
     ['module:preset', {label: 'preset@babelrc'}, 'preset@babelrc']
@@ -9,7 +11,9 @@
   env: {
     foo: {
       plugins: [
-        ['module:env-plugin', {label: 'plugin@babelrc.foo'}, 'plugin@babelrc.foo'],
+        ['module:plugin', {label: 'plugin@babelrc.1.foo'}],
+        ['module:plugin', {label: 'plugin@babelrc.2.foo'}, 'plugin@babelrc.2'],
+        ['module:env-plugin', {label: 'env-plugin@babelrc.foo'}, 'plugin@babelrc.foo'],
         ['module:plugin-default-opts']
       ],
       presets: [

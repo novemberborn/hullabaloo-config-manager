@@ -1,12 +1,18 @@
 import merge = require('lodash.merge')
 import pkgDir = require('pkg-dir')
 
-import BabelOptions, {PluginOrPresetItem} from './BabelOptions'
-import Cache from './Cache'
+// FIXME: Remove ESLint exception. BabelOptions *is* used but this isn't being detected.
+// eslint-disable-next-line no-unused-vars
+import BabelOptions, {PluginOrPresetItem, PluginOrPresetList, PluginOrPresetOptions} from './BabelOptions'
+import Cache, {NameMap} from './Cache'
 import cloneOptions from './cloneOptions'
-import {Chain, Chains, FileType} from './collector'
+import {Chain, Chains, Config, FileType} from './collector'
+import getPluginOrPresetName from './getPluginOrPresetName'
 import isFilePath from './isFilePath'
+import mergePluginsOrPresets from './mergePluginsOrPresets'
 import normalizeOptions from './normalizeOptions'
+// FIXME: Remove ESLint exception. Entry *is* used but this isn't being detected.
+// eslint-disable-next-line no-unused-vars
 import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
 
 export interface Dependency {
@@ -81,32 +87,54 @@ function mapPluginOrPresetTarget (
   return entry.filename
 }
 
-function mapPluginOrPreset (
+export type PluginOrPresetDescriptor = {
+  filename?: string
+  name: string
+  target?: object | Function
+  options?: PluginOrPresetOptions
+}
+
+function describePluginOrPreset (
   envName: string | null,
   dependencyMap: DependencyMap,
+  nameMap: NameMap,
   getEntry: (ref: string) => Entry,
   item: PluginOrPresetItem
-): PluginOrPresetItem {
+): PluginOrPresetDescriptor {
   if (Array.isArray(item)) {
     const target = item[0]
-    if (typeof target !== 'string') return item
+    if (typeof target !== 'string') {
+      switch (item.length) {
+        case 1: return {target, name: getPluginOrPresetName(nameMap, target)}
+        case 2: return {target, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, target)}
+        default: return {target, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+      }
+    }
 
     const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, target)
     switch (item.length) {
-      case 1: return filename
-      case 2: return [filename, item[1]]
-      default: return [filename, item[1], item[2]]
+      case 1: return {filename, name: getPluginOrPresetName(nameMap, filename)}
+      case 2: return {filename, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, filename)}
+      default: return {filename, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
     }
   }
 
-  return typeof item === 'string'
-    ? mapPluginOrPresetTarget(envName, dependencyMap, getEntry, item)
-    : item
+  if (typeof item === 'string') {
+    const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, item)
+    return {filename, name: getPluginOrPresetName(nameMap, filename)}
+  }
+
+  return {target: item, name: getPluginOrPresetName(nameMap, item)}
+}
+
+export interface ReducedBabelOptions extends BabelOptions {
+  plugins?: PluginOrPresetDescriptor[]
+  presets?: PluginOrPresetDescriptor[]
 }
 
 export interface MergedConfig {
   fileType: FileType
-  options: BabelOptions
+  options: ReducedBabelOptions
 }
 
 export interface ModuleConfig {
@@ -122,18 +150,26 @@ export function isModuleConfig (object: MergedConfig | ModuleConfig): object is 
   return object.fileType === FileType.JS
 }
 
+interface QueueItem {
+  config: Config
+  options: ReducedBabelOptions
+  plugins: PluginOrPresetList | null
+  presets: PluginOrPresetList | null
+}
+
 function mergeChain (
   chain: Chain,
   envName: string | null,
   pluginsAndPresets: ResolutionMap,
   dependencyMap: DependencyMap,
+  nameMap: NameMap,
   sourceMap: SourceMap,
   fixedSourceHashes: Map<string, string>
 ): ConfigList {
   const list: ConfigList = []
   let tail: MergedConfig | null = null
 
-  const queue = Array.from(chain, (config, index) => {
+  const queue = Array.from(chain, (config, index): QueueItem => {
     const options = cloneOptions(config.options)
     const plugins = options.plugins
     const presets = options.presets
@@ -142,7 +178,7 @@ function mergeChain (
     return {
       config,
       // The first config's options are not normalized.
-      options: index === 0 ? options : normalizeOptions(options),
+      options: (index === 0 ? options : normalizeOptions(options)) as ReducedBabelOptions,
       plugins: Array.isArray(plugins) ? plugins : null,
       presets: Array.isArray(presets) ? presets : null
     }
@@ -168,8 +204,12 @@ function mergeChain (
     const getPluginEntry = (ref: string) => lookup.plugins.get(ref)!
     const getPresetEntry = (ref: string) => lookup.presets.get(ref)!
 
-    const plugins = item.plugins && item.plugins.map(plugin => mapPluginOrPreset(envName, dependencyMap, getPluginEntry, plugin))
-    const presets = item.presets && item.presets.map(preset => mapPluginOrPreset(envName, dependencyMap, getPresetEntry, preset))
+    const plugins = item.plugins && item.plugins.map(plugin => {
+      return describePluginOrPreset(envName, dependencyMap, nameMap, getPluginEntry, plugin)
+    })
+    const presets = item.presets && item.presets.map(preset => {
+      return describePluginOrPreset(envName, dependencyMap, nameMap, getPresetEntry, preset)
+    })
 
     if (config.fileType === FileType.JS) {
       // Note that preparing `plugins` and `presets` has added them to
@@ -184,14 +224,12 @@ function mergeChain (
       tail = null
     } else if (tail) {
       if (plugins) {
-        tail.options.plugins = tail.options.plugins
-          ? tail.options.plugins.concat(plugins)
-          : plugins
+        if (!tail.options.plugins) tail.options.plugins = []
+        mergePluginsOrPresets(tail.options.plugins, plugins)
       }
       if (presets) {
-        tail.options.presets = tail.options.presets
-          ? tail.options.presets.concat(presets)
-          : presets
+        if (!tail.options.presets) tail.options.presets = []
+        mergePluginsOrPresets(tail.options.presets, presets)
       }
       merge(tail.options, item.options)
 
@@ -233,12 +271,13 @@ export default function reduceChains (chains: Chains, cache?: Cache): ReducedCha
   const pluginsAndPresets = resolvePluginsAndPresets(chains, cache)
 
   const dependencyMap: DependencyMap = new Map()
+  const nameMap: NameMap = cache ? cache.nameMap : new Map()
   const envNames = new Set<string>()
   const fixedSourceHashes = new Map<string, string>()
   const sourceMap: SourceMap = new Map()
 
   const unflattenedDefaultOptions = mergeChain(
-    chains.defaultChain, null, pluginsAndPresets, dependencyMap, sourceMap, fixedSourceHashes
+    chains.defaultChain, null, pluginsAndPresets, dependencyMap, nameMap, sourceMap, fixedSourceHashes
   )
 
   const unflattenedEnvOptions = new Map<string, ConfigList>()
@@ -249,7 +288,7 @@ export default function reduceChains (chains: Chains, cache?: Cache): ReducedCha
     envNames.add(envName)
     unflattenedEnvOptions.set(
       envName,
-      mergeChain(chain, envName, pluginsAndPresets, dependencyMap, sourceMap, fixedSourceHashes)
+      mergeChain(chain, envName, pluginsAndPresets, dependencyMap, nameMap, sourceMap, fixedSourceHashes)
     )
   }
 

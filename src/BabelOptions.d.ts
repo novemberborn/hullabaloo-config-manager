@@ -7,18 +7,18 @@ declare type PluginOrPresetItem = PluginOrPresetTarget
 declare type PluginOrPresetList = Array<PluginOrPresetItem>
 export {PluginOrPresetOptions, PluginOrPresetTarget, PluginOrPresetItem, PluginOrPresetList}
 
-declare interface ReducedOptions {
+declare interface LimitedOptions {
   babelrc?: boolean
-  env?: {[name: string]: ReducedOptions}
+  env?: {[name: string]: LimitedOptions}
   extends?: string
   plugins?: PluginOrPresetList
   presets?: PluginOrPresetList
 }
-export {ReducedOptions}
+export {LimitedOptions}
 
 // Based on <https://github.com/babel/babel/blob/fba19295b4e837fe7af782653fd3dd6480ba2edf/packages/babel-core/src/config/options.js>
 /* eslint-disable typescript/member-ordering */
-declare interface BabelOptions extends ReducedOptions {
+declare interface BabelOptions extends LimitedOptions {
   cwd?: string
   filename?: string
   filenameRelative?: string
