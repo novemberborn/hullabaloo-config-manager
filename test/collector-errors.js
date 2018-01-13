@@ -4,17 +4,6 @@ import {createConfig} from '..'
 import * as collector from '../build/collector'
 import fixture from './helpers/fixture'
 
-{
-  const eisdir = async (t, dir) => {
-    const err = await t.throws(collector.fromDirectory(dir))
-    t.is(err.code, 'EISDIR')
-  }
-  eisdir.title = file => `fails if ${file} is a directory`
-
-  test('.babelrc', eisdir, fixture('dirs-not-files', 'babelrc'))
-  test('package.json', eisdir, fixture('dirs-not-files', 'pkg'))
-}
-
 test('fails when parsing invalid JSON5', async t => {
   const err = await t.throws(collector.fromDirectory(fixture('bad-rc', 'invalid-json5')))
   t.is(err.name, 'ParseError')
