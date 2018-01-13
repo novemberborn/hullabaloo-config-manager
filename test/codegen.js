@@ -38,6 +38,17 @@ test('generates a nicely indented module', async t => {
     },
     source
   }))
-  const code = codegen(reduceChains(chains))
-  t.snapshot(replaceString(code, process.cwd(), '~'))
+
+  let code = codegen(reduceChains(chains))
+  let cwd = process.cwd()
+  if (path.sep === path.win32.sep) {
+    // File paths are JSON encoded, which means the separator is doubled.
+    // Replace by the POSIX separator so the snapshot can be matched.
+    code = replaceString(code, path.win32.sep + path.win32.sep, path.posix.sep)
+    // Similarly normalize the CWD. Ensure any trailing slashes are removed,
+    // e.g. when the CWD is `Z:/`.
+    cwd = replaceString(cwd, path.win32.sep, path.posix.sep).replace(/\/$/, '')
+  }
+
+  t.snapshot(replaceString(code, cwd, '~'))
 })
