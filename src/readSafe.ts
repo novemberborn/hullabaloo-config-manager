@@ -7,14 +7,17 @@ export default function readSafe (source: string, cache?: Cache): Promise<Buffer
     return cache.files.get(source)!
   }
 
+  const isFile = new Promise<boolean>(resolve => {
+    gfs.stat(source, (err, stat) => {
+      resolve(!err && stat.isFile())
+    })
+  })
   const promise = new Promise<Buffer | null>((resolve, reject) => {
-    gfs.readFile(source, (err, contents) => {
-      if (err) {
-        if (err.code === 'ENOENT') {
-          resolve(null)
-        } else {
-          reject(err)
-        }
+    gfs.readFile(source, async (err, contents) => {
+      if (!(await isFile)) {
+        resolve(null)
+      } else if (err) {
+        reject(err)
       } else {
         resolve(contents)
       }
