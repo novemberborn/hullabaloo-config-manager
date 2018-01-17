@@ -211,8 +211,13 @@ export class Config {
     this.extendsPointer = null
   }
 
-  public copyWithEnv (envName: string, options: BabelOptions, runtimeHash: string | null): Config {
-    return new Config(this.dir, envName, this.hash, options, this.source, this.fileType, this.runtimeDependencies, runtimeHash)
+  public copyWithEnv (
+    envName: string,
+    options: BabelOptions,
+    runtimeDependencies: Map<string, string> | null,
+    runtimeHash: string | null
+  ): Config {
+    return new Config(this.dir, envName, this.hash, options, this.source, this.fileType, runtimeDependencies, runtimeHash)
   }
 
   public extend (config: Config): void {
@@ -433,6 +438,7 @@ class Collector {
         this.envNames.add(envName)
 
         let options: BabelOptions
+        let runtimeDependencies: Map<string, string> | null = null
         let runtimeHash: string | null = null
         if (this.cache && this.cache.moduleSources.has(config.source)) {
           // `config` shouldn't be a `FactoryConfig` unless its cached source
@@ -444,17 +450,20 @@ class Collector {
             const result = config.factory(envName)
             cached.byEnv.set(envName, result)
             options = cloneOptions(result.options)
+            runtimeDependencies = result.runtimeDependencies
             runtimeHash = result.runtimeHash
           }
         } else {
           const result = config.factory(envName)
           options = result.options
+          runtimeDependencies = result.runtimeDependencies
           runtimeHash = result.runtimeHash
         }
 
-        const promise = this.add(config.copyWithEnv(envName, options, runtimeHash), [envName]).then(envPointer => {
-          config.envPointers.set(envName, envPointer)
-        })
+        const promise = this.add(config.copyWithEnv(envName, options, runtimeDependencies, runtimeHash), [envName])
+          .then(envPointer => {
+            config.envPointers.set(envName, envPointer)
+          })
         waitFor.push(promise)
       }
     } else {
@@ -496,7 +505,7 @@ class Collector {
         const options = pair[1]
 
         this.envNames.add(envName)
-        const promise = this.add(config.copyWithEnv(envName, options, null), [envName]).then(envPointer => {
+        const promise = this.add(config.copyWithEnv(envName, options, null, null), [envName]).then(envPointer => {
           config.envPointers.set(envName, envPointer)
         })
         waitFor.push(promise)
