@@ -128,8 +128,8 @@ function describePluginOrPreset (
 }
 
 export interface ReducedBabelOptions extends BabelOptions {
-  plugins?: PluginOrPresetDescriptor[]
-  presets?: PluginOrPresetDescriptor[]
+  plugins: PluginOrPresetDescriptor[]
+  presets: PluginOrPresetDescriptor[]
 }
 
 export interface MergedConfig {
@@ -153,8 +153,8 @@ export function isModuleConfig (object: MergedConfig | ModuleConfig): object is 
 interface QueueItem {
   config: Config
   options: ReducedBabelOptions
-  plugins: PluginOrPresetList | null
-  presets: PluginOrPresetList | null
+  plugins: PluginOrPresetList
+  presets: PluginOrPresetList
 }
 
 function mergeChain (
@@ -179,8 +179,8 @@ function mergeChain (
       config,
       // The first config's options are not normalized.
       options: (index === 0 ? options : normalizeOptions(options)) as ReducedBabelOptions,
-      plugins: Array.isArray(plugins) ? plugins : null,
-      presets: Array.isArray(presets) ? presets : null
+      plugins: Array.isArray(plugins) ? plugins : [],
+      presets: Array.isArray(presets) ? presets : []
     }
   })
   for (const item of queue) {
@@ -204,10 +204,10 @@ function mergeChain (
     const getPluginEntry = (ref: string) => lookup.plugins.get(ref)!
     const getPresetEntry = (ref: string) => lookup.presets.get(ref)!
 
-    const plugins = item.plugins && item.plugins.map(plugin => {
+    const plugins = item.plugins.map(plugin => {
       return describePluginOrPreset(envName, dependencyMap, nameMap, getPluginEntry, plugin)
     })
-    const presets = item.presets && item.presets.map(preset => {
+    const presets = item.presets.map(preset => {
       return describePluginOrPreset(envName, dependencyMap, nameMap, getPresetEntry, preset)
     })
 
@@ -223,26 +223,16 @@ function mergeChain (
       })
       tail = null
     } else if (tail) {
-      if (plugins) {
-        if (!tail.options.plugins) tail.options.plugins = []
-        mergePluginsOrPresets(tail.options.plugins, plugins)
-      }
-      if (presets) {
-        if (!tail.options.presets) tail.options.presets = []
-        mergePluginsOrPresets(tail.options.presets, presets)
-      }
+      mergePluginsOrPresets(tail.options.plugins!, plugins)
+      mergePluginsOrPresets(tail.options.presets!, presets)
       merge(tail.options, item.options)
 
       if (tail.fileType === FileType.JSON && config.fileType === FileType.JSON5) {
         tail.fileType = config.fileType
       }
     } else {
-      if (plugins) {
-        item.options.plugins = plugins
-      }
-      if (presets) {
-        item.options.presets = presets
-      }
+      item.options.plugins = plugins
+      item.options.presets = presets
       tail = {
         fileType: config.fileType,
         options: item.options

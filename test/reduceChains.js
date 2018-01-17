@@ -180,7 +180,10 @@ test('removes non-array plugins and presets values', reduces, [
 ], new Map(), {
   unflattenedDefaultOptions: [{
     fileType: 'JSON',
-    options: {}
+    options: {
+      plugins: [],
+      presets: []
+    }
   }]
 })
 
@@ -196,7 +199,10 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5', re
 ], new Map(), {
   unflattenedDefaultOptions: [{
     fileType: 'JSON5',
-    options: {}
+    options: {
+      plugins: [],
+      presets: []
+    }
   }]
 })
 
@@ -226,7 +232,10 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
     },
     {
       fileType: 'JSON5',
-      options: {}
+      options: {
+        plugins: [],
+        presets: []
+      }
     }
   ]
 })
@@ -265,7 +274,9 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
         ignore,
         only,
         passPerPreset,
-        sourceMaps: sourceMap
+        sourceMaps: sourceMap,
+        plugins: [],
+        presets: []
       }
     }]
   })
