@@ -16,14 +16,22 @@ function printConfig (config: MergedConfig | ModuleConfig) {
   if (!isModuleConfig(config)) return stringify(config.fileType === FileType.JSON5, config.options)
 
   return `loadCachedModule(cache, ${JSON.stringify(config.dir)}, ${JSON.stringify(config.source)}, envName, \
-${JSON.stringify(config.envName !== null)})`
+${JSON.stringify(config.overrideIndex) || 'undefined'}, ${JSON.stringify(config.envName !== null)})`
 }
 
 function generateFactory (unflattened: ConfigList): string {
   return `(envName, cache) => {
   return Object.assign(mergeConfigs([
 ${unflattened.map(item => indentString(printConfig(item), 4)).join(',\n')}
-  ]), {babelrc: false, envName})
+  ]), {
+    babelrc: false,
+    envName,
+    overrides: [
+${unflattened.overrides.map(items => `      mergeConfigs([
+${items.map(item => indentString(printConfig(item), 8)).join(',\n')}
+      ])`).join(',\n')}
+    ]
+  })
 }`
 }
 
@@ -88,7 +96,7 @@ function normalizePluginsAndPresets (resolutionCache, nameMap, options) {
   return options
 }
 
-function loadCachedModule (cache, dir, source, envName, selectEnv) {
+function loadCachedModule (cache, dir, source, envName, selectOverride, selectEnv) {
   if (!cache) throw new Error(\`A cache is required to load the configuration module at '\${source}'\`)
 
   const cached = cache.moduleSources.get(source)
@@ -97,9 +105,11 @@ function loadCachedModule (cache, dir, source, envName, selectEnv) {
 specific to the '\${envName}' environment, for '\${source}', in the cache\`)
 
   let options = cloneOptions(cached.unrestricted ? cached.options : cached.byEnv.get(envName).options)
+  if (selectOverride !== undefined) options = options.overrides[selectOverride]
   if (selectEnv) options = options.env[envName]
   delete options.env
   delete options.extends
+  delete options.overrides
   normalizeSomeOptions(options)
   normalizePluginsAndPresets(cache.pluginsAndPresets.get(dir), cache.nameMap, options)
   return options

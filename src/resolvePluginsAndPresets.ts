@@ -4,7 +4,7 @@ import pkgDir = require('pkg-dir')
 import resolveFrom = require('resolve-from')
 
 import Cache, {PluginsAndPresetsMap, PluginsAndPresetsMapValue} from './Cache'
-import {Chains, Config} from './collector'
+import {Chain, Chains, Config} from './collector'
 import standardizeName from './standardizeName'
 
 export const enum Kind {
@@ -71,38 +71,46 @@ export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: 
   }
 
   const byConfig: ResolutionMap = new Map()
-  for (const chain of chains) {
-    for (const config of chain) {
-      if (byConfig.has(config)) continue
+  const resolveConfig = (config: Config) => {
+    if (byConfig.has(config)) return
 
-      const plugins = new Map<string, Entry>()
-      const presets = new Map<string, Entry>()
-      byConfig.set(config, {plugins, presets})
+    const plugins = new Map<string, Entry>()
+    const presets = new Map<string, Entry>()
+    byConfig.set(config, {plugins, presets})
 
-      const fromDir = config.dir
-      const cache = getCache(fromDir)
-      const resolve = (kind: Kind, ref: string) => {
-        const possibility = standardizeName(kind, ref)
-        const filename = resolveName(possibility.name, fromDir, cache)
-        if (!filename) throw new ResolveError(config.source, kind, ref)
+    const fromDir = config.dir
+    const cache = getCache(fromDir)
+    const resolve = (kind: Kind, ref: string) => {
+      const possibility = standardizeName(kind, ref)
+      const filename = resolveName(possibility.name, fromDir, cache)
+      if (!filename) throw new ResolveError(config.source, kind, ref)
 
-        const fromPackage = resolvePackage(filename, possibility.fromFile)
-        const entry = {filename, fromPackage}
-        if (kind === Kind.PLUGIN) {
-          plugins.set(ref, entry)
-        } else {
-          presets.set(ref, entry)
-        }
-      }
-
-      for (const target of normalize(config.options.plugins)) {
-        if (typeof target === 'string') resolve(Kind.PLUGIN, target)
-      }
-      for (const target of normalize(config.options.presets)) {
-        if (typeof target === 'string') resolve(Kind.PRESET, target)
+      const fromPackage = resolvePackage(filename, possibility.fromFile)
+      const entry = {filename, fromPackage}
+      if (kind === Kind.PLUGIN) {
+        plugins.set(ref, entry)
+      } else {
+        presets.set(ref, entry)
       }
     }
+
+    for (const target of normalize(config.options.plugins)) {
+      if (typeof target === 'string') resolve(Kind.PLUGIN, target)
+    }
+    for (const target of normalize(config.options.presets)) {
+      if (typeof target === 'string') resolve(Kind.PRESET, target)
+    }
   }
+
+  const resolveChains = (iterable: Iterable<Chain>) => {
+    for (const chain of iterable) {
+      for (const config of chain) {
+        resolveConfig(config)
+      }
+      resolveChains(chain.overrides)
+    }
+  }
+  resolveChains(chains)
 
   return byConfig
 }

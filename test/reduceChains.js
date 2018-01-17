@@ -110,66 +110,69 @@ const reduces = (t, defaultChain, envChains, expected) => {
     runtimeHash: null
   }
 
-  test('reduces config chains', reduces, [zero, one, two], new Map([['foo', [one, two, three, four, five]]]), {
-    dependencies: [
-      {default: false, envs: new Set(['foo']), filename: '/thud.js', fromPackage: null},
-      {default: true, envs: new Set(['foo']), filename: '~/babel-plugin-foo/index.js', fromPackage: '~/babel-plugin-foo'},
-      {default: false, envs: new Set(['foo']), filename: '~/babel-plugin-quux/index.js', fromPackage: '~/babel-plugin-quux'},
-      {default: true, envs: new Set(['foo']), filename: '~/babel-preset-qux/index.js', fromPackage: '~/babel-preset-qux'},
-      {default: true, envs: new Set(['foo']), filename: '~/bar.js', fromPackage: null},
-      {default: true, envs: new Set(['foo']), filename: '~/baz.js', fromPackage: null}
-    ],
-    envNames: new Set(['foo']),
-    sources: [
-      {default: true, envs: new Set(), source: '0', runtimeHash: null},
-      {default: true, envs: new Set(['foo']), source: '1', runtimeHash: null},
-      {default: true, envs: new Set(['foo']), source: '2', runtimeHash: null},
-      {default: false, envs: new Set(['foo']), source: '3', runtimeHash: null},
-      {default: false, envs: new Set(['foo']), source: '4', runtimeHash: null},
-      {default: false, envs: new Set(['foo']), source: '5', runtimeHash: null}
-    ],
-    unflattenedDefaultOptions: [{
-      fileType: 'JSON',
-      options: {
-        parserOpts: {foo: 1},
-        plugins: [
-          {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
-          {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'}
-        ],
-        presets: [
-          {filename: '~/bar.js', options: {hello: 'world'}, name: '🤡🎪🎟.2'},
-          {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
-        ],
-        sourceMaps: false
-      }
-    }],
-    unflattenedEnvOptions: new Map([
-      ['foo', [{
+  test('reduces config chains', reduces,
+    Object.assign([zero, one, two], {overrides: []}),
+    new Map([['foo', Object.assign([one, two, three, four, five], {overrides: []})]]),
+    {
+      dependencies: [
+        {default: false, envs: new Set(['foo']), filename: '/thud.js', fromPackage: null},
+        {default: true, envs: new Set(['foo']), filename: '~/babel-plugin-foo/index.js', fromPackage: '~/babel-plugin-foo'},
+        {default: false, envs: new Set(['foo']), filename: '~/babel-plugin-quux/index.js', fromPackage: '~/babel-plugin-quux'},
+        {default: true, envs: new Set(['foo']), filename: '~/babel-preset-qux/index.js', fromPackage: '~/babel-preset-qux'},
+        {default: true, envs: new Set(['foo']), filename: '~/bar.js', fromPackage: null},
+        {default: true, envs: new Set(['foo']), filename: '~/baz.js', fromPackage: null}
+      ],
+      envNames: new Set(['foo']),
+      sources: [
+        {default: true, envs: new Set(), source: '0', runtimeHash: null},
+        {default: true, envs: new Set(['foo']), source: '1', runtimeHash: null},
+        {default: true, envs: new Set(['foo']), source: '2', runtimeHash: null},
+        {default: false, envs: new Set(['foo']), source: '3', runtimeHash: null},
+        {default: false, envs: new Set(['foo']), source: '4', runtimeHash: null},
+        {default: false, envs: new Set(['foo']), source: '5', runtimeHash: null}
+      ],
+      unflattenedDefaultOptions: Object.assign([{
         fileType: 'JSON',
         options: {
-          parserOpts: {foo: 2},
+          parserOpts: {foo: 1},
           plugins: [
             {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
-            {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'},
-            {filename: '~/babel-plugin-quux/index.js', name: '🤡🎪🎟.8'}
+            {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'}
           ],
           presets: [
-            {filename: '~/bar.js', options: {goodbye: true}, name: '🤡🎪🎟.2'},
+            {filename: '~/bar.js', options: {hello: 'world'}, name: '🤡🎪🎟.2'},
             {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
           ],
           sourceMaps: false
         }
-      }, {
-        dir: '/',
-        envName: 'foo',
-        fileType: 'JS',
-        source: '5'
-      }]]
-    ])
-  })
+      }], {overrides: []}),
+      unflattenedEnvOptions: new Map([
+        ['foo', Object.assign([{
+          fileType: 'JSON',
+          options: {
+            parserOpts: {foo: 2},
+            plugins: [
+              {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
+              {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'},
+              {filename: '~/babel-plugin-quux/index.js', name: '🤡🎪🎟.8'}
+            ],
+            presets: [
+              {filename: '~/bar.js', options: {goodbye: true}, name: '🤡🎪🎟.2'},
+              {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
+            ],
+            sourceMaps: false
+          }
+        }, {
+          dir: '/',
+          envName: 'foo',
+          fileType: 'JS',
+          source: '5'
+        }], {overrides: []})]
+      ])
+    })
 }
 
-test('removes non-array plugins and presets values', reduces, [
+test('removes non-array plugins and presets values', reduces, Object.assign([
   {
     fileType: 'JSON',
     options: {
@@ -177,17 +180,17 @@ test('removes non-array plugins and presets values', reduces, [
       presets: 'presets'
     }
   }
-], new Map(), {
-  unflattenedDefaultOptions: [{
+], {overrides: []}), new Map(), {
+  unflattenedDefaultOptions: Object.assign([{
     fileType: 'JSON',
     options: {
       plugins: [],
       presets: []
     }
-  }]
+  }], {overrides: []})
 })
 
-test('fileType becomes JSON5 if some of the configs were parsed using JSON5', reduces, [
+test('fileType becomes JSON5 if some of the configs were parsed using JSON5', reduces, Object.assign([
   {
     fileType: 'JSON',
     options: {}
@@ -196,49 +199,50 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5', re
     fileType: 'JSON5',
     options: {}
   }
-], new Map(), {
-  unflattenedDefaultOptions: [{
+], {overrides: []}), new Map(), {
+  unflattenedDefaultOptions: Object.assign([{
     fileType: 'JSON5',
     options: {
       plugins: [],
       presets: []
     }
-  }]
+  }], {overrides: []})
 })
 
-test('fileType becomes JSON5 if some of the configs were parsed using JSON5, after encountering a JS config', reduces, [
-  {
-    dir: '~',
-    envName: null,
-    fileType: 'JS',
-    options: {},
-    source: '~/config.js'
-  },
-  {
-    fileType: 'JSON',
-    options: {}
-  },
-  {
-    fileType: 'JSON5',
-    options: {}
-  }
-], new Map(), {
-  unflattenedDefaultOptions: [
+test('fileType becomes JSON5 if some of the configs were parsed using JSON5, after encountering a JS config', reduces,
+  Object.assign([
     {
       dir: '~',
       envName: null,
       fileType: 'JS',
+      options: {},
       source: '~/config.js'
     },
     {
+      fileType: 'JSON',
+      options: {}
+    },
+    {
       fileType: 'JSON5',
-      options: {
-        plugins: [],
-        presets: []
-      }
+      options: {}
     }
-  ]
-})
+  ], {overrides: []}), new Map(), {
+    unflattenedDefaultOptions: Object.assign([
+      {
+        dir: '~',
+        envName: null,
+        fileType: 'JS',
+        source: '~/config.js'
+      },
+      {
+        fileType: 'JSON5',
+        options: {
+          plugins: [],
+          presets: []
+        }
+      }
+    ], {overrides: []})
+  })
 
 {
   const ignore = {ignore: true}
@@ -246,7 +250,7 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
   const passPerPreset = {passPerPreset: true}
   const sourceMap = {sourceMap: true}
 
-  test('normalizes options', reduces, [
+  test('normalizes options', reduces, Object.assign([
     {
       fileType: 'JSON',
       options: {
@@ -267,8 +271,8 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
         sourceMap
       }
     }
-  ], new Map(), {
-    unflattenedDefaultOptions: [{
+  ], {overrides: []}), new Map(), {
+    unflattenedDefaultOptions: Object.assign([{
       fileType: 'JSON',
       options: {
         ignore,
@@ -278,7 +282,7 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
         plugins: [],
         presets: []
       }
-    }]
+    }], {overrides: []})
   })
 }
 
@@ -291,7 +295,7 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
   const presetTarget2 = {[Symbol('preset2')]: true}
   const presetTarget3 = {[Symbol('preset3')]: true}
   const presetTarget4 = {[Symbol('preset4')]: true}
-  test('preserves object and function values for plugin and preset targets', reduces, [
+  test('preserves object and function values for plugin and preset targets', reduces, Object.assign([
     {
       fileType: 'JSON',
       options: {
@@ -309,8 +313,8 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
         ]
       }
     }
-  ], new Map(), {
-    unflattenedDefaultOptions: [{
+  ], {overrides: []}), new Map(), {
+    unflattenedDefaultOptions: Object.assign([{
       fileType: 'JSON',
       options: {
         plugins: [
@@ -326,11 +330,11 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
           {target: presetTarget4, options: {}, name: 'name'}
         ]
       }
-    }]
+    }], {overrides: []})
   })
 }
 
-test('collects fixed source hashes', reduces, [
+test('collects fixed source hashes', reduces, Object.assign([
   {
     options: {},
     source: 'foo',
@@ -341,7 +345,7 @@ test('collects fixed source hashes', reduces, [
     source: 'bar',
     hash: 'hash of bar'
   }
-], new Map(), {
+], {overrides: []}), new Map(), {
   fixedSourceHashes: new Map([
     ['foo', 'hash of foo'],
     ['bar', 'hash of bar']

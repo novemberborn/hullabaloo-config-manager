@@ -46,6 +46,10 @@ test('fails when both sourceMap and sourceMaps options are present', async t => 
   test(invalid, 'ast')
   test(invalid, 'envName')
   test('nested env option', invalid, 'nested-env')
+  test('non-array overrides option', invalid, 'overrides-not-array')
+  test('overrides option containing falsy values', invalid, 'overrides-contains-falsy')
+  test('nested overrides option', invalid, 'nested-overrides')
+  test('overrides inside env options', invalid, 'overrides-in-env')
 }
 
 test('fails when parsing invalid JSON', async t => {

@@ -6,7 +6,7 @@ import pkgDir = require('pkg-dir')
 import BabelOptions, {PluginOrPresetItem, PluginOrPresetList, PluginOrPresetOptions} from './BabelOptions'
 import Cache, {NameMap} from './Cache'
 import cloneOptions from './cloneOptions'
-import {Chain, Chains, Config, FileType} from './collector'
+import {Chain, Chains, Config, FileType, OverrideConfig} from './collector'
 import getPluginOrPresetName from './getPluginOrPresetName'
 import isFilePath from './isFilePath'
 import mergePluginsOrPresets from './mergePluginsOrPresets'
@@ -135,6 +135,7 @@ export interface ReducedBabelOptions extends BabelOptions {
 export interface MergedConfig {
   fileType: FileType
   options: ReducedBabelOptions
+  overrideIndex?: number
 }
 
 export interface ModuleConfig {
@@ -142,9 +143,12 @@ export interface ModuleConfig {
   envName: string | null
   fileType: FileType.JS
   source: string
+  overrideIndex?: number
 }
 
-export type ConfigList = Array<MergedConfig | ModuleConfig>
+export type ConfigList = Array<MergedConfig | ModuleConfig> & {
+  overrides: Array<MergedConfig | ModuleConfig>[]
+}
 
 export function isModuleConfig (object: MergedConfig | ModuleConfig): object is ModuleConfig {
   return object.fileType === FileType.JS
@@ -155,6 +159,7 @@ interface QueueItem {
   options: ReducedBabelOptions
   plugins: PluginOrPresetList
   presets: PluginOrPresetList
+  overrideIndex?: number
 }
 
 function mergeChain (
@@ -166,11 +171,14 @@ function mergeChain (
   sourceMap: SourceMap,
   fixedSourceHashes: Map<string, string>
 ): ConfigList {
-  const list: ConfigList = []
+  const list: ConfigList = Object.assign([], {overrides: []})
   let tail: MergedConfig | null = null
 
   const queue = Array.from(chain, (config, index): QueueItem => {
     const options = cloneOptions(config.options)
+    const overrideIndex = config instanceof OverrideConfig
+      ? config.index
+      : undefined
     const plugins = options.plugins
     const presets = options.presets
     delete options.plugins
@@ -180,7 +188,8 @@ function mergeChain (
       // The first config's options are not normalized.
       options: (index === 0 ? options : normalizeOptions(options)) as ReducedBabelOptions,
       plugins: Array.isArray(plugins) ? plugins : [],
-      presets: Array.isArray(presets) ? presets : []
+      presets: Array.isArray(presets) ? presets : [],
+      overrideIndex
     }
   })
   for (const item of queue) {
@@ -215,14 +224,18 @@ function mergeChain (
       // Note that preparing `plugins` and `presets` has added them to
       // `dependencyMap`. This will still be used when determining the
       // configuration hash, even if the values are discarded.
-      list.push({
+      const moduleConfig: ModuleConfig = {
         dir: config.dir,
         envName: config.envName,
         fileType: config.fileType,
         source: config.source
-      })
+      }
+      if (item.overrideIndex !== undefined) {
+        moduleConfig.overrideIndex = item.overrideIndex
+      }
+      list.push(moduleConfig)
       tail = null
-    } else if (tail) {
+    } else if (tail && item.overrideIndex === tail.overrideIndex) {
       mergePluginsOrPresets(tail.options.plugins!, plugins)
       mergePluginsOrPresets(tail.options.presets!, presets)
       merge(tail.options, item.options)
@@ -237,8 +250,28 @@ function mergeChain (
         fileType: config.fileType,
         options: item.options
       }
+      if (item.overrideIndex !== undefined) {
+        tail.overrideIndex = item.overrideIndex
+      }
       list.push(tail)
     }
+  }
+
+  for (const overrideChain of chain.overrides) {
+    const merged = mergeChain(
+      overrideChain,
+      envName,
+      pluginsAndPresets,
+      dependencyMap,
+      nameMap,
+      sourceMap,
+      fixedSourceHashes
+    )
+
+    for (const recursive of merged.overrides) {
+      list.overrides.push(recursive)
+    }
+    list.overrides.push(merged.slice())
   }
 
   return list
