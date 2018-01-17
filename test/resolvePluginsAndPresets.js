@@ -62,7 +62,7 @@ import pkgDirMock from './helpers/pkgDirMock'
     }
 
     test('resolves plugins and presets', resolves, [
-      [config]
+      Object.assign([config], {overrides: []})
     ], new Map([
       [config, {
         plugins: new Map([
@@ -184,8 +184,11 @@ import pkgDirMock from './helpers/pkgDirMock'
       }]
     ])
 
-    test('resolves multiple configs in a chain', resolves, [[first, second]], expected)
-    test('resolves multiple chains', resolves, [[first], [second]], expected)
+    test('resolves multiple configs in a chain', resolves, [Object.assign([first, second], {overrides: []})], expected)
+    test('resolves multiple chains', resolves, [
+      Object.assign([first], {overrides: []}),
+      Object.assign([second], {overrides: []})
+    ], expected)
   }
 
   {
@@ -196,7 +199,7 @@ import pkgDirMock from './helpers/pkgDirMock'
       },
       dir: path.resolve('my-configs')
     }
-    test('ignores non-string targets', resolves, [[config]], new Map([
+    test('ignores non-string targets', resolves, [Object.assign([config], {overrides: []})], new Map([
       [config, {
         plugins: new Map(),
         presets: new Map()
@@ -226,7 +229,7 @@ test('caches results', t => {
     dir: path.resolve('bar')
   }
   resolvePluginsAndPresets([
-    [
+    Object.assign([
       config,
       {
         options: {
@@ -237,8 +240,8 @@ test('caches results', t => {
         },
         dir: path.resolve('bar')
       }
-    ],
-    [
+    ], {overrides: []}),
+    Object.assign([
       {
         options: {
           plugins: [
@@ -249,7 +252,7 @@ test('caches results', t => {
         dir: path.resolve('qux')
       },
       config
-    ]
+    ], {overrides: []})
   ])
 
   const {callCount, calls} = td.explain(resolveFrom.silent)
@@ -287,7 +290,7 @@ test('caches can be shared', t => {
 
   ;[1, 2].forEach(() => {
     resolvePluginsAndPresets([
-      [
+      Object.assign([
         config,
         {
           options: {
@@ -298,8 +301,8 @@ test('caches can be shared', t => {
           },
           dir: path.resolve('bar')
         }
-      ],
-      [
+      ], {overrides: []}),
+      Object.assign([
         {
           options: {
             plugins: [
@@ -310,7 +313,7 @@ test('caches can be shared', t => {
           dir: path.resolve('qux')
         },
         config
-      ]
+      ], {overrides: []})
     ], sharedCache)
   })
 

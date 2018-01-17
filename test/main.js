@@ -35,6 +35,7 @@ test('createConfig() allows dir to be specified separately from source', async t
   t.deepEqual(configModule.getOptions(), {
     babelrc: false,
     envName: 'test',
+    overrides: [],
     plugins: [[pluginIndex, undefined, '🤡🎪🎟.0']]
   })
 })
@@ -153,6 +154,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
   const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
   t.deepEqual(configModule.getOptions(null, cache), {
+    overrides: [],
     plugins: [
       [
         pluginIndex,
@@ -208,6 +210,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
   t.deepEqual(configModule.getOptions(null, cache), {
+    overrides: [],
     plugins: [
       [
         pluginIndex,
@@ -318,6 +321,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
   const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
   t.deepEqual(configModule.getOptions(null, cache), {
+    overrides: [],
     plugins: [
       [
         pluginIndex,
@@ -399,6 +403,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
 
   env.BABEL_ENV = 'foo'
   t.deepEqual(configModule.getOptions(null, cache), {
+    overrides: [],
     plugins: [
       [
         pluginIndex,

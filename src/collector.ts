@@ -44,6 +44,21 @@ function validateOptions (source: string, options: any): BabelOptions {
     for (const envName in options.env) {
       // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L216:L218
       if (has(options.env[envName], 'env')) throw new InvalidFileError(source)
+      // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L246:L257
+      if (has(options.env[envName], 'overrides')) throw new InvalidFileError(source)
+    }
+  }
+
+  if (has(options, 'overrides')) {
+    // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L304
+    if (options.overrides !== null && options.overrides !== undefined && !Array.isArray(options.overrides)) {
+      throw new InvalidFileError(source)
+    }
+    for (const override of options.overrides) {
+      // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/config-chain.js#L257:L258
+      if (!override) throw new InvalidFileError(source)
+      // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L249:L250
+      if (has(override, 'overrides')) throw new InvalidFileError(source)
     }
   }
 
@@ -185,6 +200,7 @@ export class Config {
   public extends: Config | null
   public extendsPointer: number | null
   public readonly envPointers: Map<string, number>
+  public readonly overridePointers: number[]
 
   public constructor (
     dir: string,
@@ -209,6 +225,11 @@ export class Config {
     this.envPointers = new Map()
     this.extends = null
     this.extendsPointer = null
+    this.overridePointers = []
+  }
+
+  public copyAsOverride (index: number, options: BabelOptions): OverrideConfig {
+    return new OverrideConfig(index, this.dir, this.envName, this.hash, options, this.source, this.fileType, null, null)
   }
 
   public copyWithEnv (
@@ -247,6 +268,13 @@ export class Config {
     delete this.options.extends
     return clause
   }
+
+  public takeOverrides (): Array<BabelOptions> {
+    const overrides = this.options.overrides
+    delete this.options.overrides
+
+    return Array.isArray(overrides) ? overrides : []
+  }
 }
 
 class FactoryConfig extends Config {
@@ -279,8 +307,48 @@ class FactoryConfig extends Config {
   }
 }
 
-export class RestrictedConfig extends Config {}
+export class OverrideConfig extends Config {
+  public readonly index: number
 
+  public constructor (
+    index: number,
+    dir: string,
+    envName: string | null,
+    hash: string | null,
+    options: BabelOptions,
+    source: string,
+    fileType: FileType,
+    runtimeDependencies: Map<string, string> | null,
+    runtimeHash: string | null
+  ) {
+    super(dir, envName, hash, options, source, fileType, null, null)
+    this.index = index
+  }
+
+  public copyWithEnv (
+    envName: string,
+    options: BabelOptions,
+    runtimeDependencies: Map<string, string> | null,
+    runtimeHash: string | null
+  ): OverrideConfig {
+    const test = this.options.test
+    const include = this.options.include
+    const exclude = this.options.exclude
+    return new OverrideConfig(
+      this.index,
+      this.dir,
+      envName,
+      this.hash,
+      {test, include, exclude, ...options},
+      this.source,
+      this.fileType,
+      runtimeDependencies,
+      runtimeHash
+    )
+  }
+}
+
+export class RestrictedConfig extends Config {}
 async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?: Cache): Promise<Config | null> {
   const fileSource = path.resolve(dir, '.babelrc')
   const jsSource = path.resolve(dir, '.babelrc.js')
@@ -397,7 +465,9 @@ async function resolveFile (source: string, expectedEnvNames: string[], cache?: 
   return new Config(path.dirname(source), null, null, parseFile(source, contents), source, FileType.JSON5, null, null)
 }
 
-export type Chain = Set<Config>
+export type Chain = Set<Config> & {
+  overrides: Chain[]
+}
 
 export class Chains {
   public readonly babelrcDir?: string
@@ -418,10 +488,11 @@ export class Chains {
   }
 }
 
-// Configs that came from an env-restricted factory, or "env" directives share
-// their source with their parent config, and thus cannot reuse the pointer.
+// Configs that came from an env-restricted factory, or "env" or "overrides"
+// directives share their source with their parent config, and thus cannot reuse
+// the pointer.
 function reusePointer (config: Config): boolean {
-  return !config.envName && !(config instanceof RestrictedConfig)
+  return !config.envName && !(config instanceof OverrideConfig) && !(config instanceof RestrictedConfig)
 }
 
 class Collector {
@@ -449,7 +520,7 @@ class Collector {
     }
 
     const pointer = this.configs.push(config) - 1
-    // Make sure not to override the pointer to an environmental
+    // Make sure not to override the pointer to an environmental or override
     // config's parent.
     if (reusePointer(config)) {
       this.pointers.set(config.source, pointer)
@@ -457,7 +528,7 @@ class Collector {
 
     // Collect promises so they can run concurrently and be awaited at the end
     // of this function.
-    const waitFor = []
+    const waitFor: Promise<void>[] = []
 
     if (config instanceof FactoryConfig) {
       for (const envName of expectedEnvNames) {
@@ -495,6 +566,7 @@ class Collector {
     } else {
       const envs = config.takeEnvs()
       const extendsClause = config.takeExtends()
+      const overrides = config.takeOverrides()
 
       if (config.extends) {
         const promise = this.add(config.extends, expectedEnvNames).then(extendsPointer => {
@@ -536,6 +608,13 @@ class Collector {
         })
         waitFor.push(promise)
       }
+
+      overrides.forEach((options, index) => {
+        const promise = this.add(config.copyAsOverride(index, options), expectedEnvNames).then(overridePointer => {
+          config.overridePointers.push(overridePointer)
+        })
+        waitFor.push(promise)
+      })
     }
 
     await Promise.all(waitFor)
@@ -548,14 +627,27 @@ class Collector {
     // Resolves a config chain, correctly ordering parent configs and recursing
     // through environmental configs, while avoiding cycles and repetitions.
     const resolveChain = (from: Iterable<Config>, envName?: string): Chain => {
-      const chain: Chain = new Set()
-      const knownParents: Chain = new Set()
+      const chain: Chain = Object.assign(new Set(), {overrides: []})
+      const knownParents: Set<Config> = new Set()
+
+      const addOverrides = (config: Config) => {
+        for (const pointer of config.overridePointers) {
+          const overrideConfig = this.configs[pointer]
+          const defaultChain = resolveChain([overrideConfig])
+          if (typeof envName === 'string') {
+            chain.overrides.push(resolveChain(defaultChain, envName))
+          } else {
+            chain.overrides.push(defaultChain)
+          }
+        }
+      }
 
       const addWithEnv = (config: Config) => {
         // Avoid unnecessary work in case the `from` list contains configs that
         // have already been added through an environmental config's parent.
         if (chain.has(config)) return
         chain.add(config)
+        addOverrides(config)
 
         if (config.envPointers.has(envName!)) {
           const pointer = config.envPointers.get(envName!)!
@@ -582,6 +674,7 @@ class Collector {
           addWithEnv(config)
         } else {
           chain.add(config)
+          addOverrides(config)
         }
       }
 

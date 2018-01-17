@@ -86,3 +86,42 @@ test.serial('resolved js-env config matches @babel/core', async t => {
     transformBabel({filename, envName: 'foo'}),
     '.babelrc: envName = foo')
 })
+
+test.serial('resolved overrides config matches @babel/core', async t => {
+  setBabelEnv()
+  setNodeEnv()
+
+  {
+    const cache = prepareCache()
+    const config = await fromDirectory(fixture('compare/overrides'), {cache})
+    const configModule = runGeneratedCode(config.generateModule())
+    const filename = fixture('compare/overrides/foo.js')
+
+    t.deepEqual(
+      transformChain(configModule.getOptions(null, cache), filename),
+      transformBabel({filename}),
+      '.babelrc: no NODE_ENV or BABEL_ENV')
+
+    t.deepEqual(
+      transformChain(configModule.getOptions('foo', cache), 'foo.js'),
+      transformBabel({filename, envName: 'foo'}),
+      '.babelrc: envName = foo')
+  }
+
+  {
+    const cache = prepareCache()
+    const config = await fromDirectory(fixture('compare/overrides', 'js'), {cache})
+    const configModule = runGeneratedCode(config.generateModule())
+    const filename = fixture('compare/overrides/js/foo.js')
+
+    t.deepEqual(
+      transformChain(configModule.getOptions(null, cache), filename),
+      transformBabel({filename}),
+      '.babelrc.js: no NODE_ENV or BABEL_ENV')
+
+    t.deepEqual(
+      transformChain(configModule.getOptions('foo', cache), 'foo.js'),
+      transformBabel({filename, envName: 'foo'}),
+      '.babelrc.js: envName = foo')
+  }
+})

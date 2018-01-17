@@ -27,8 +27,12 @@ declare interface BabelOptions extends LimitedOptions {
   inputSourceMap?: object | boolean
   envName?: string
 
+  test?: string | Function | RegExp
+  include?: string | Function | RegExp
+  exclude?: string | Function | RegExp
   ignore?: Array<string | Function | RegExp>
   only?: Array<string | Function | RegExp>
+  overrides?: Array<BabelOptions>
 
   passPerPreset?: boolean
 

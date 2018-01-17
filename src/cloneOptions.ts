@@ -10,6 +10,10 @@ export default function cloneOptions (options: BabelOptions): BabelOptions {
     }
   }
 
+  if (shallow.overrides && Array.isArray(shallow.overrides)) {
+    shallow.overrides = shallow.overrides.map(override => cloneOptions(override))
+  }
+
   if (shallow.inputSourceMap && typeof shallow.inputSourceMap === 'object') {
     shallow.inputSourceMap = {...shallow.inputSourceMap}
   }

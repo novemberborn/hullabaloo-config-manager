@@ -1,0 +1,29 @@
+{
+  plugins: [
+    ['../node_modules/plugin', {label: 'babelrc'}],
+    ['../node_modules/plugin', {label: 'babelrc.named'}, 'named']
+  ],
+  env: {
+    foo: {
+      plugins: [
+        ['../node_modules/plugin', {label: 'babelrc.foo'}]
+      ]
+    }
+  },
+  overrides: [
+    {
+      test: 'foo.js',
+      extends: './extends.json5',
+      plugins: [
+        ['../node_modules/plugin', {label: 'babelrc.named.override'}, 'named']
+      ],
+      env: {
+        foo: {
+          plugins: [
+            ['../node_modules/plugin', {label: 'babelrc.override.foo'}]
+          ]
+        }
+      }
+    }
+  ]
+}
