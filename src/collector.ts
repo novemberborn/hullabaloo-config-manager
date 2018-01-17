@@ -90,11 +90,11 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
   if (cache && cache.moduleSources.has(source)) {
     const cached = cache.moduleSources.get(source)!
     if (isUnrestrictedModuleSource(cached)) return cloneCachedModule(cached)
-    if (cached.byEnv.has(envName)) return Object.assign(cloneCachedModule(cached.byEnv.get(envName)!), {factory: cached.factory})
+    if (cached.byEnv.has(envName)) return {...cloneCachedModule(cached.byEnv.get(envName)!), factory: cached.factory}
 
     const result = cached.factory!(envName)
     cached.byEnv.set(envName, cloneCachedModule(result))
-    return Object.assign(result, {factory: cached.factory})
+    return {...result, factory: cached.factory}
   }
 
   if (resolveFrom.silent(path.dirname(source), source) === null) return null
@@ -168,7 +168,7 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
     if (result.unrestricted) cache.moduleSources.set(source, cloneCachedModule(result) as UnrestrictedModuleSource)
     else cache.moduleSources.set(source, {byEnv: new Map([[envName, cloneCachedModule(result)]]), factory})
   }
-  return Object.assign(cloneCachedModule(result), {factory})
+  return {...cloneCachedModule(result), factory}
 }
 
 export class Config {

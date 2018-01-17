@@ -1,7 +1,7 @@
 import BabelOptions from './BabelOptions'
 
 export default function cloneOptions (options: BabelOptions): BabelOptions {
-  const shallow = Object.assign({}, options)
+  const shallow = {...options}
 
   if (options.env && typeof options.env === 'object') {
     shallow.env = {}
@@ -11,13 +11,13 @@ export default function cloneOptions (options: BabelOptions): BabelOptions {
   }
 
   if (shallow.inputSourceMap && typeof shallow.inputSourceMap === 'object') {
-    shallow.inputSourceMap = Object.assign({}, shallow.inputSourceMap)
+    shallow.inputSourceMap = {...shallow.inputSourceMap}
   }
   if (shallow.generatorOpts && typeof shallow.generatorOpts === 'object') {
-    shallow.generatorOpts = Object.assign({}, shallow.generatorOpts)
+    shallow.generatorOpts = {...shallow.generatorOpts}
   }
   if (shallow.parserOpts && typeof shallow.parserOpts === 'object') {
-    shallow.parserOpts = Object.assign({}, shallow.parserOpts)
+    shallow.parserOpts = {...shallow.parserOpts}
   }
 
   if (Array.isArray(shallow.ignore)) {
