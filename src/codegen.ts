@@ -71,7 +71,7 @@ function normalizePluginsAndPresets (resolutionCache, nameMap, options) {
       return {target: item, name: getPluginOrPresetName(nameMap, item)}
     })
   } else {
-    delete options.plugins
+    options.plugins = []
   }
   if (Array.isArray(options.presets)) {
     options.presets = options.presets.map(item => {
@@ -91,7 +91,7 @@ function normalizePluginsAndPresets (resolutionCache, nameMap, options) {
       return {target: item, name: getPluginOrPresetName(nameMap, item)}
     })
   } else {
-    delete options.presets
+    options.presets = []
   }
   return options
 }
@@ -115,6 +115,10 @@ specific to the '\${envName}' environment, for '\${source}', in the cache\`)
   return options
 }
 
+function arrifyPluginsOrPresets (list) {
+  return list.map(item => ([item.target || item.filename, item.options, item.name]))
+}
+
 function mergeConfigs (configs) {
   const merged = configs.reduce((target, options) => {
     const plugins = options.plugins
@@ -123,22 +127,18 @@ function mergeConfigs (configs) {
     delete options.plugins
     delete options.presets
 
-    if (plugins) {
-      mergePluginsOrPresets(target.plugins, plugins)
-    }
-    if (presets) {
-      mergePluginsOrPresets(target.presets, presets)
-    }
+    mergePluginsOrPresets(target.plugins, plugins)
+    mergePluginsOrPresets(target.presets, presets)
     return merge(target, options)
   }, {plugins: [], presets: []})
 
   if (merged.plugins.length > 0) {
-    merged.plugins = merged.plugins.map(item => ([item.target || item.filename, item.options, item.name]))
+    merged.plugins = arrifyPluginsOrPresets(merged.plugins)
   } else {
     delete merged.plugins
   }
   if (merged.presets.length > 0) {
-    merged.presets = merged.presets.map(item => ([item.target || item.filename, item.options, item.name]))
+    merged.presets = arrifyPluginsOrPresets(merged.presets)
   } else {
     delete merged.presets
   }
