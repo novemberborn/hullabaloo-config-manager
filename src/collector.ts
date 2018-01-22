@@ -260,7 +260,26 @@ class FactoryConfig extends Config {
     super(dir, null, null, {}, source, FileType.JS, null, null)
     this.factory = factory
   }
+
+  public copyRestricted (
+    options: BabelOptions,
+    runtimeDependencies: Map<string, string> | null,
+    runtimeHash: string | null
+  ): RestrictedConfig {
+    return new RestrictedConfig(
+      this.dir,
+      this.envName,
+      this.hash,
+      options,
+      this.source,
+      this.fileType,
+      runtimeDependencies,
+      runtimeHash
+    )
+  }
 }
+
+export class RestrictedConfig extends Config {}
 
 async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?: Cache): Promise<Config | null> {
   const fileSource = path.resolve(dir, '.babelrc')
@@ -399,6 +418,12 @@ export class Chains {
   }
 }
 
+// Configs that came from an env-restricted factory, or "env" directives share
+// their source with their parent config, and thus cannot reuse the pointer.
+function reusePointer (config: Config): boolean {
+  return !config.envName && !(config instanceof RestrictedConfig)
+}
+
 class Collector {
   public readonly cache?: Cache
 
@@ -418,16 +443,17 @@ class Collector {
   }
 
   public async add (config: Config, expectedEnvNames: string[]): Promise<number> {
-    // Avoid adding duplicate configs. Note that configs that came from an
-    // "env" directive share their source with their parent config.
-    if (!config.envName && this.pointers.has(config.source)) {
+    // Avoid adding duplicate configs.
+    if (reusePointer(config) && this.pointers.has(config.source)) {
       return this.pointers.get(config.source)!
     }
 
     const pointer = this.configs.push(config) - 1
     // Make sure not to override the pointer to an environmental
     // config's parent.
-    if (!config.envName) this.pointers.set(config.source, pointer)
+    if (reusePointer(config)) {
+      this.pointers.set(config.source, pointer)
+    }
 
     // Collect promises so they can run concurrently and be awaited at the end
     // of this function.
@@ -460,7 +486,7 @@ class Collector {
           runtimeHash = result.runtimeHash
         }
 
-        const promise = this.add(config.copyWithEnv(envName, options, runtimeDependencies, runtimeHash), [envName])
+        const promise = this.add(config.copyRestricted(options, runtimeDependencies, runtimeHash), [envName])
           .then(envPointer => {
             config.envPointers.set(envName, envPointer)
           })
