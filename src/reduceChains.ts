@@ -7,6 +7,7 @@ import BabelOptions, {PluginOrPresetItem, PluginOrPresetList, PluginOrPresetOpti
 import Cache, {NameMap} from './Cache'
 import cloneOptions from './cloneOptions'
 import {Chain, Chains, Config, FileType, OverrideConfig} from './collector'
+import {InvalidFileError} from './errors'
 import getPluginOrPresetName from './getPluginOrPresetName'
 import isFilePath from './isFilePath'
 import mergePluginsOrPresets from './mergePluginsOrPresets'
@@ -106,18 +107,20 @@ function describePluginOrPreset (
   if (Array.isArray(item)) {
     const target = item[0]
     if (typeof target !== 'string') {
+      const name = getPluginOrPresetName(nameMap, target)
       switch (item.length) {
-        case 1: return {dirname, target, name: getPluginOrPresetName(nameMap, target)}
-        case 2: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, target)}
-        default: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+        case 1: return {dirname, target, name}
+        case 2: return {dirname, target, options: item[1] as PluginOrPresetOptions, name}
+        default: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: `${name}.${item[2]}`}
       }
     }
 
     const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, target)
+    const name = getPluginOrPresetName(nameMap, filename)
     switch (item.length) {
-      case 1: return {dirname, filename, name: getPluginOrPresetName(nameMap, filename)}
-      case 2: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, filename)} // eslint-disable-line max-len
-      default: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+      case 1: return {dirname, filename, name}
+      case 2: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name}
+      default: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: `${name}.${item[2]}`}
     }
   }
 
@@ -221,6 +224,13 @@ function mergeChain (
     const presets = item.presets.map(preset => {
       return describePluginOrPreset(config.dir, envName, dependencyMap, nameMap, getPresetEntry, preset)
     })
+
+    if (plugins.length !== new Set(plugins.map(plugin => plugin.name)).size) {
+      throw new InvalidFileError(config.source)
+    }
+    if (presets.length !== new Set(presets.map(preset => preset.name)).size) {
+      throw new InvalidFileError(config.source)
+    }
 
     if (config.fileType === FileType.JS) {
       // Note that preparing `plugins` and `presets` has added them to

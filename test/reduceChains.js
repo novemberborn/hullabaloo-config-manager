@@ -25,8 +25,8 @@ mockRequire('~/bar.js', () => ({}))
 mockRequire('~/baz.js', () => ({}))
 mockRequire('/thud.js', () => ({}))
 
-const reduces = (t, defaultChain, envChains, expected) => {
-  const chains = {
+function makeChainsObj (defaultChain, envChains) {
+  return {
     defaultChain,
     envChains,
     * [Symbol.iterator] () {
@@ -36,6 +36,10 @@ const reduces = (t, defaultChain, envChains, expected) => {
       }
     }
   }
+}
+
+const reduces = (t, defaultChain, envChains, expected) => {
+  const chains = makeChainsObj(defaultChain, envChains)
   const {
     dependencies,
     envNames,
@@ -327,13 +331,13 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
           {dirname: '~', target: pluginTarget1, name: '🤡🎪🎟.0'},
           {dirname: '~', target: pluginTarget2, name: '🤡🎪🎟.1'},
           {dirname: '~', target: pluginTarget3, options: {}, name: '🤡🎪🎟.2'},
-          {dirname: '~', target: pluginTarget4, options: {}, name: 'name'}
+          {dirname: '~', target: pluginTarget4, options: {}, name: '🤡🎪🎟.3.name'}
         ],
         presets: [
-          {dirname: '~', target: presetTarget1, name: '🤡🎪🎟.3'},
-          {dirname: '~', target: presetTarget2, name: '🤡🎪🎟.4'},
-          {dirname: '~', target: presetTarget3, options: {}, name: '🤡🎪🎟.5'},
-          {dirname: '~', target: presetTarget4, options: {}, name: 'name'}
+          {dirname: '~', target: presetTarget1, name: '🤡🎪🎟.4'},
+          {dirname: '~', target: presetTarget2, name: '🤡🎪🎟.5'},
+          {dirname: '~', target: presetTarget3, options: {}, name: '🤡🎪🎟.6'},
+          {dirname: '~', target: presetTarget4, options: {}, name: '🤡🎪🎟.7.name'}
         ]
       }
     }], {overrides: []})
@@ -356,4 +360,42 @@ test('collects fixed source hashes', reduces, Object.assign([
     ['foo', 'hash of foo'],
     ['bar', 'hash of bar']
   ])
+})
+
+test('throws when a config contains repeated plugins', t => {
+  const plugin = () => {}
+  const chains = makeChainsObj(Object.assign([
+    {
+      options: {
+        plugins: [
+          plugin,
+          plugin
+        ]
+      },
+      source: 'foo'
+    }
+  ], {overrides: []}), new Map())
+
+  const err = t.throws(() => reduceChains(chains))
+  t.is(err.name, 'InvalidFileError')
+  t.is(err.source, 'foo')
+})
+
+test('throws when a config contains repeated presets', t => {
+  const preset = () => {}
+  const chains = makeChainsObj(Object.assign([
+    {
+      options: {
+        presets: [
+          preset,
+          preset
+        ]
+      },
+      source: 'foo'
+    }
+  ], {overrides: []}), new Map())
+
+  const err = t.throws(() => reduceChains(chains))
+  t.is(err.name, 'InvalidFileError')
+  t.is(err.source, 'foo')
 })
