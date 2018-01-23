@@ -9,7 +9,7 @@ module.exports = options => {
     ],
     presets: [
       [
-        require('preset'), // eslint-disable-line import/no-extraneous-dependencies
+        require('preset').default, // eslint-disable-line import/no-extraneous-dependencies
         {label: 'preset@extended-by-babelrc'},
         'preset@extended-by-babelrc'
       ]

@@ -18,12 +18,12 @@ const {default: reduceChains} = proxyquire('../build/reduceChains', {
   })
 })
 
-mockRequire('~/babel-plugin-foo/index.js', {})
-mockRequire('~/babel-plugin-quux/index.js', {})
-mockRequire('~/babel-preset-qux/index.js', {})
-mockRequire('~/bar.js', {})
-mockRequire('~/baz.js', {})
-mockRequire('/thud.js', {})
+mockRequire('~/babel-plugin-foo/index.js', () => ({}))
+mockRequire('~/babel-plugin-quux/index.js', () => ({}))
+mockRequire('~/babel-preset-qux/index.js', () => ({}))
+mockRequire('~/bar.js', () => ({}))
+mockRequire('~/baz.js', () => ({}))
+mockRequire('/thud.js', () => ({}))
 
 const reduces = (t, defaultChain, envChains, expected) => {
   const chains = {
