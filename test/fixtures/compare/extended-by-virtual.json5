@@ -1,6 +1,7 @@
 {
   plugins: [
-    ['module:plugin', {label: 'plugin@extended-by-virtual'}, 'plugin@extended-by-virtual']
+    ['module:plugin', {label: 'plugin@extended-by-virtual'}, 'plugin@extended-by-virtual'],
+    ['module:plugin-copy', {label: 'plugin-copy'}, 'copy-or-not']
   ],
   presets: [
     ['module:preset', {label: 'preset@extended-by-virtual'}, 'preset@extended-by-virtual']

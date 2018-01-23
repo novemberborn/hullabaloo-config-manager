@@ -5,7 +5,8 @@ module.exports = options => {
   return {
     plugins: [
       ['module:plugin', {label: 'plugin@extended-by-babelrc.1'}],
-      [plugin, {label: 'plugin@extended-by-babelrc.2'}, 'plugin@extended-by-babelrc.2']
+      [plugin, {label: 'plugin@extended-by-babelrc.2'}, 'plugin@extended-by-babelrc.2'],
+      ['module:plugin-copy', {label: 'plugin-copy'}, 'copy-or-not']
     ],
     presets: [
       [

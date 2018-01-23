@@ -7,6 +7,7 @@ import Verifier from '../build/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
 import envPluginFn from './fixtures/compare/node_modules/env-plugin'
+import pluginCopyFn from './fixtures/compare/node_modules/plugin-copy'
 import pluginDefaultOptsFn from './fixtures/compare/node_modules/plugin-default-opts'
 import pluginFn from './fixtures/compare/node_modules/plugin'
 import presetFn from './fixtures/compare/node_modules/preset'
@@ -181,21 +182,35 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         {
           label: 'plugin@extended-by-babelrc.2'
         },
-        'plugin@extended-by-babelrc.2'
+        '🤡🎪🎟.0.plugin@extended-by-babelrc.2'
+      ],
+      [
+        pluginCopyFn,
+        {
+          label: 'plugin-copy'
+        },
+        '🤡🎪🎟.2.copy-or-not'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.2'
         },
-        'plugin@babelrc.2'
+        '🤡🎪🎟.0.plugin@babelrc.2'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
-        'plugin@babelrc.3'
+        '🤡🎪🎟.0.plugin@babelrc.3'
+      ],
+      [
+        pluginFn,
+        {
+          label: 'plugin-not-copied'
+        },
+        '🤡🎪🎟.0.copy-or-not'
       ]
     ],
     presets: [
@@ -204,14 +219,14 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         {
           label: 'preset@extended-by-babelrc'
         },
-        'preset@extended-by-babelrc'
+        '🤡🎪🎟.4.preset@extended-by-babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc'
         },
-        'preset@babelrc'
+        '🤡🎪🎟.4.preset@babelrc'
       ]
     ],
     babelrc: false,
@@ -235,33 +250,47 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         {
           label: 'plugin@extended-by-babelrc.2.foo'
         },
-        'plugin@extended-by-babelrc.2'
+        '🤡🎪🎟.0.plugin@extended-by-babelrc.2'
+      ],
+      [
+        pluginCopyFn,
+        {
+          label: 'plugin-copy'
+        },
+        '🤡🎪🎟.2.copy-or-not'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.2.foo'
         },
-        'plugin@babelrc.2'
+        '🤡🎪🎟.0.plugin@babelrc.2'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
-        'plugin@babelrc.3'
+        '🤡🎪🎟.0.plugin@babelrc.3'
+      ],
+      [
+        pluginFn,
+        {
+          label: 'plugin-not-copied'
+        },
+        '🤡🎪🎟.0.copy-or-not'
       ],
       [
         envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
         },
-        'plugin@babelrc.foo'
+        '🤡🎪🎟.0.plugin@babelrc.foo'
       ],
       [
         pluginDefaultOptsFn,
         undefined,
-        '🤡🎪🎟.2'
+        '🤡🎪🎟.7'
       ]
     ],
     presets: [
@@ -270,28 +299,28 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         {
           label: 'preset@extended-by-babelrc'
         },
-        'preset@extended-by-babelrc'
+        '🤡🎪🎟.4.preset@extended-by-babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-babelrc.foo'
         },
-        'preset@extended-by-babelrc.foo'
+        '🤡🎪🎟.4.preset@extended-by-babelrc.foo'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc'
         },
-        'preset@babelrc'
+        '🤡🎪🎟.4.preset@babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc.foo'
         },
-        'preset@babelrc.foo'
+        '🤡🎪🎟.4.preset@babelrc.foo'
       ]
     ],
     babelrc: false,
@@ -342,35 +371,49 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         {
           label: 'plugin@extended-by-babelrc.2'
         },
-        'plugin@extended-by-babelrc.2'
+        '🤡🎪🎟.0.plugin@extended-by-babelrc.2'
+      ],
+      [
+        pluginCopyFn,
+        {
+          label: 'plugin-copy'
+        },
+        '🤡🎪🎟.2.copy-or-not'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.2'
         },
-        'plugin@babelrc.2'
+        '🤡🎪🎟.0.plugin@babelrc.2'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
-        'plugin@babelrc.3'
+        '🤡🎪🎟.0.plugin@babelrc.3'
+      ],
+      [
+        pluginFn,
+        {
+          label: 'plugin-not-copied'
+        },
+        '🤡🎪🎟.0.copy-or-not'
       ],
       [
         pluginFn,
         {
           label: 'plugin@extended-by-virtual'
         },
-        'plugin@extended-by-virtual'
+        '🤡🎪🎟.0.plugin@extended-by-virtual'
       ],
       [
         pluginFn,
         {
           label: 'plugin@virtual'
         },
-        'plugin@virtual'
+        '🤡🎪🎟.0.plugin@virtual'
       ]
     ],
     presets: [
@@ -379,28 +422,28 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         {
           label: 'preset@extended-by-babelrc'
         },
-        'preset@extended-by-babelrc'
+        '🤡🎪🎟.4.preset@extended-by-babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc'
         },
-        'preset@babelrc'
+        '🤡🎪🎟.4.preset@babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-virtual'
         },
-        'preset@extended-by-virtual'
+        '🤡🎪🎟.4.preset@extended-by-virtual'
       ],
       [
         presetFn,
         {
           label: 'preset@virtual'
         },
-        'preset@virtual'
+        '🤡🎪🎟.4.preset@virtual'
       ]
     ],
     babelrc: false,
@@ -424,68 +467,82 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         {
           label: 'plugin@extended-by-babelrc.2.foo'
         },
-        'plugin@extended-by-babelrc.2'
+        '🤡🎪🎟.0.plugin@extended-by-babelrc.2'
+      ],
+      [
+        pluginCopyFn,
+        {
+          label: 'plugin-copy'
+        },
+        '🤡🎪🎟.2.copy-or-not'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.2.foo'
         },
-        'plugin@babelrc.2'
+        '🤡🎪🎟.0.plugin@babelrc.2'
       ],
       [
         pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
-        'plugin@babelrc.3'
+        '🤡🎪🎟.0.plugin@babelrc.3'
+      ],
+      [
+        pluginFn,
+        {
+          label: 'plugin-not-copied'
+        },
+        '🤡🎪🎟.0.copy-or-not'
       ],
       [
         envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
         },
-        'plugin@babelrc.foo'
+        '🤡🎪🎟.0.plugin@babelrc.foo'
       ],
       [
         pluginDefaultOptsFn,
         undefined,
-        '🤡🎪🎟.2'
+        '🤡🎪🎟.7'
       ],
       [
         pluginFn,
         {
           label: 'plugin@extended-by-virtual'
         },
-        'plugin@extended-by-virtual'
+        '🤡🎪🎟.0.plugin@extended-by-virtual'
       ],
       [
         pluginFn,
         {
           label: 'plugin@extended-by-virtual.foo'
         },
-        'plugin@extended-by-virtual.foo'
+        '🤡🎪🎟.0.plugin@extended-by-virtual.foo'
       ],
       [
         pluginFn,
         {
           label: 'plugin@virtual'
         },
-        'plugin@virtual'
+        '🤡🎪🎟.0.plugin@virtual'
       ],
       [
         pluginFn,
         {
           label: 'plugin@extended-by-virtual-foo'
         },
-        'plugin@extended-by-virtual-foo'
+        '🤡🎪🎟.0.plugin@extended-by-virtual-foo'
       ],
       [
         pluginFn,
         {
           label: 'plugin@virtual.foo'
         },
-        'plugin@virtual.foo'
+        '🤡🎪🎟.0.plugin@virtual.foo'
       ]
     ],
     presets: [
@@ -494,63 +551,63 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         {
           label: 'preset@extended-by-babelrc'
         },
-        'preset@extended-by-babelrc'
+        '🤡🎪🎟.4.preset@extended-by-babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-babelrc.foo'
         },
-        'preset@extended-by-babelrc.foo'
+        '🤡🎪🎟.4.preset@extended-by-babelrc.foo'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc'
         },
-        'preset@babelrc'
+        '🤡🎪🎟.4.preset@babelrc'
       ],
       [
         presetFn,
         {
           label: 'preset@babelrc.foo'
         },
-        'preset@babelrc.foo'
+        '🤡🎪🎟.4.preset@babelrc.foo'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-virtual'
         },
-        'preset@extended-by-virtual'
+        '🤡🎪🎟.4.preset@extended-by-virtual'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-virtual.foo'
         },
-        'preset@extended-by-virtual.foo'
+        '🤡🎪🎟.4.preset@extended-by-virtual.foo'
       ],
       [
         presetFn,
         {
           label: 'preset@virtual'
         },
-        'preset@virtual'
+        '🤡🎪🎟.4.preset@virtual'
       ],
       [
         presetFn,
         {
           label: 'preset@extended-by-virtual-foo'
         },
-        'preset@extended-by-virtual-foo'
+        '🤡🎪🎟.4.preset@extended-by-virtual-foo'
       ],
       [
         presetFn,
         {
           label: 'preset@virtual.foo'
         },
-        'preset@virtual.foo'
+        '🤡🎪🎟.4.preset@virtual.foo'
       ]
     ],
     babelrc: false,

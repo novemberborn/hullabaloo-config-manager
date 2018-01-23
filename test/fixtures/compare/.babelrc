@@ -3,7 +3,8 @@
   plugins: [
     ['module:plugin', {label: 'plugin@babelrc.1'}],
     ['module:plugin', {label: 'plugin@babelrc.2'}, 'plugin@babelrc.2'],
-    ['module:plugin', {label: 'plugin@babelrc.3'}, 'plugin@babelrc.3']
+    ['module:plugin', {label: 'plugin@babelrc.3'}, 'plugin@babelrc.3'],
+    ['module:plugin', {label: 'plugin-not-copied'}, 'copy-or-not']
   ],
   presets: [
     ['module:preset', {label: 'preset@babelrc'}, 'preset@babelrc']

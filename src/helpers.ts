@@ -27,18 +27,20 @@ function normalizePluginOrPreset (
   if (Array.isArray(item)) {
     const target = item[0]
     if (typeof target !== 'string') {
+      const name = getPluginOrPresetName(nameMap, target)
       switch (item.length) {
-        case 1: return {dirname, target, name: getPluginOrPresetName(nameMap, target)}
-        case 2: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, target)}
-        default: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+        case 1: return {dirname, target, name}
+        case 2: return {dirname, target, options: item[1] as PluginOrPresetOptions, name}
+        default: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: `${name}.${item[2]}`}
       }
     }
 
     const filename = resolvePluginOrPreset(resolutionCache, kind, target)
+    const name = getPluginOrPresetName(nameMap, filename)
     switch (item.length) {
-      case 1: return {dirname, filename, name: getPluginOrPresetName(nameMap, filename)}
-      case 2: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, filename)} // eslint-disable-line max-len
-      default: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+      case 1: return {dirname, filename, name}
+      case 2: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name}
+      default: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: `${name}.${item[2]}`}
     }
   }
 
@@ -117,6 +119,9 @@ export function loadCachedModule (
   } else {
     options.presets = []
   }
+  // Don't check for duplicate plugin or preset names. Presumably these have
+  // been validated when configs were collected.
+
   return options as ReducedBabelOptions
 }
 
