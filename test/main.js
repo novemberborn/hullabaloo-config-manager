@@ -187,7 +187,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     ],
     presets: [
       [
-        require(presetIndex), // eslint-disable-line import/no-dynamic-require
+        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -255,7 +255,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     ],
     presets: [
       [
-        require(presetIndex), // eslint-disable-line import/no-dynamic-require
+        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -368,7 +368,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        require(presetIndex), // eslint-disable-line import/no-dynamic-require
+        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },
@@ -483,7 +483,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        require(presetIndex), // eslint-disable-line import/no-dynamic-require
+        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
         {
           label: 'preset@extended-by-babelrc'
         },

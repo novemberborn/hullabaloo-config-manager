@@ -284,7 +284,7 @@ test('verifyEnv() behavior with envName argument', async t => {
   {
     fs.writeFileSync(path.join(dir, 'foo.js'), 'foo')
     const expectedCacheKeys = {
-      dependencies: md5Hex([md5Hex('foo'), md5Hex('')]),
+      dependencies: md5Hex([md5Hex('foo'), md5Hex('module.exports = () => {}\n')]),
       sources: cacheKeys.sources
     }
 
