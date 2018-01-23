@@ -1,5 +1,3 @@
-import path from 'path'
-
 import test from 'ava'
 import md5Hex from 'md5-hex'
 import proxyquire from 'proxyquire'
@@ -8,6 +6,10 @@ import {createConfig, fromConfig, fromDirectory, prepareCache, restoreVerifier} 
 import Verifier from '../build/Verifier'
 import fixture from './helpers/fixture'
 import runGeneratedCode from './helpers/runGeneratedCode'
+import envPluginFn from './fixtures/compare/node_modules/env-plugin'
+import pluginDefaultOptsFn from './fixtures/compare/node_modules/plugin-default-opts'
+import pluginFn from './fixtures/compare/node_modules/plugin'
+import presetFn from './fixtures/compare/node_modules/preset'
 
 function mockCurrentEnv (env = {}) {
   return proxyquire('..', {
@@ -17,6 +19,20 @@ function mockCurrentEnv (env = {}) {
       }
     })
   }).currentEnv
+}
+
+function replaceWrapped (options) {
+  if (options.plugins) {
+    for (const plugin of options.plugins) {
+      plugin[0] = plugin[0].wrapped || plugin[0]
+    }
+  }
+  if (options.presets) {
+    for (const preset of options.presets) {
+      preset[0] = preset[0].wrapped || preset[0]
+    }
+  }
+  return options
 }
 
 test('createConfig() allows dir to be specified separately from source', async t => {
@@ -31,12 +47,11 @@ test('createConfig() allows dir to be specified separately from source', async t
   }))
   const configModule = runGeneratedCode(result.generateModule())
 
-  const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
-  t.deepEqual(configModule.getOptions(), {
+  t.deepEqual(replaceWrapped(configModule.getOptions()), {
     babelrc: false,
     envName: 'test',
     overrides: [],
-    plugins: [[pluginIndex, undefined, '🤡🎪🎟.0']]
+    plugins: [[pluginFn, undefined, '🤡🎪🎟.0']]
   })
 })
 
@@ -145,40 +160,38 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   ]) {
     t.true(cache.files.has(file))
   }
-  t.true(cache.moduleSources.has(fixture('compare', 'extended-by-babelrc.js')))
+  t.true(cache.moduleSources.has(fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js')))
   t.true(cache.pluginsAndPresets.has(dir))
 
   const env = {}
   const configModule = runGeneratedCode(result.generateModule(), env)
 
-  const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
-  const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
-  t.deepEqual(configModule.getOptions(null, cache), {
+  t.deepEqual(replaceWrapped(configModule.getOptions(null, cache)), {
     overrides: [],
     plugins: [
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.1'
         },
         '🤡🎪🎟.0'
       ],
       [
-        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
+        pluginFn,
         {
           label: 'plugin@extended-by-babelrc.2'
         },
         'plugin@extended-by-babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.2'
         },
         'plugin@babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
@@ -187,14 +200,14 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
     ],
     presets: [
       [
-        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
+        presetFn,
         {
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc'
         },
@@ -207,76 +220,74 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
   })
 
   env.BABEL_ENV = 'foo'
-  const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
-  const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
-  t.deepEqual(configModule.getOptions(null, cache), {
+  t.deepEqual(replaceWrapped(configModule.getOptions(null, cache)), {
     overrides: [],
     plugins: [
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.1.foo'
         },
         '🤡🎪🎟.0'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-babelrc.2.foo'
         },
         'plugin@extended-by-babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.2.foo'
         },
         'plugin@babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
         'plugin@babelrc.3'
       ],
       [
-        envPluginIndex,
+        envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
         },
         'plugin@babelrc.foo'
       ],
       [
-        pluginDefaultOptsIndex,
+        pluginDefaultOptsFn,
         undefined,
         '🤡🎪🎟.2'
       ]
     ],
     presets: [
       [
-        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
+        presetFn,
         {
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-babelrc.foo'
         },
         'preset@extended-by-babelrc.foo'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc'
         },
         'preset@babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc.foo'
         },
@@ -305,61 +316,57 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   for (const file of [
     fixture('compare', '.babelrc'),
     fixture('compare', 'extended-by-virtual.json5'),
-    fixture('compare', 'extended-by-virtual-foo.json5'),
+    fixture('compare', 'dir', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'package.json')
   ]) {
     t.true(cache.files.has(file))
   }
-  t.true(cache.moduleSources.has(fixture('compare', 'extended-by-babelrc.js')))
+  t.true(cache.moduleSources.has(fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js')))
   t.true(cache.pluginsAndPresets.has(dir))
 
   const env = {}
   const configModule = runGeneratedCode(result.generateModule(), env)
 
-  const pluginIndex = path.join(dir, 'node_modules', 'plugin', 'index.js')
-  const presetIndex = path.join(dir, 'node_modules', 'preset', 'index.js')
-  const envPluginIndex = path.join(dir, 'node_modules', 'env-plugin', 'index.js')
-  const pluginDefaultOptsIndex = path.join(dir, 'node_modules', 'plugin-default-opts', 'index.js')
-  t.deepEqual(configModule.getOptions(null, cache), {
+  t.deepEqual(replaceWrapped(configModule.getOptions(null, cache)), {
     overrides: [],
     plugins: [
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.1'
         },
         '🤡🎪🎟.0'
       ],
       [
-        require(pluginIndex), // eslint-disable-line import/no-dynamic-require
+        pluginFn,
         {
           label: 'plugin@extended-by-babelrc.2'
         },
         'plugin@extended-by-babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.2'
         },
         'plugin@babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
         'plugin@babelrc.3'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-virtual'
         },
         'plugin@extended-by-virtual'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@virtual'
         },
@@ -368,28 +375,28 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
+        presetFn,
         {
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc'
         },
         'preset@babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-virtual'
         },
         'preset@extended-by-virtual'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@virtual'
         },
@@ -402,79 +409,79 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
   })
 
   env.BABEL_ENV = 'foo'
-  t.deepEqual(configModule.getOptions(null, cache), {
+  t.deepEqual(replaceWrapped(configModule.getOptions(null, cache)), {
     overrides: [],
     plugins: [
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.1.foo'
         },
         '🤡🎪🎟.0'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-babelrc.2.foo'
         },
         'plugin@extended-by-babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.2.foo'
         },
         'plugin@babelrc.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@babelrc.3'
         },
         'plugin@babelrc.3'
       ],
       [
-        envPluginIndex,
+        envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
         },
         'plugin@babelrc.foo'
       ],
       [
-        pluginDefaultOptsIndex,
+        pluginDefaultOptsFn,
         undefined,
         '🤡🎪🎟.2'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-virtual'
         },
         'plugin@extended-by-virtual'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-virtual.foo'
         },
         'plugin@extended-by-virtual.foo'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@virtual'
         },
         'plugin@virtual'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@extended-by-virtual-foo'
         },
         'plugin@extended-by-virtual-foo'
       ],
       [
-        pluginIndex,
+        pluginFn,
         {
           label: 'plugin@virtual.foo'
         },
@@ -483,63 +490,63 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
     ],
     presets: [
       [
-        require(presetIndex).default, // eslint-disable-line import/no-dynamic-require
+        presetFn,
         {
           label: 'preset@extended-by-babelrc'
         },
         'preset@extended-by-babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-babelrc.foo'
         },
         'preset@extended-by-babelrc.foo'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc'
         },
         'preset@babelrc'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@babelrc.foo'
         },
         'preset@babelrc.foo'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-virtual'
         },
         'preset@extended-by-virtual'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-virtual.foo'
         },
         'preset@extended-by-virtual.foo'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@virtual'
         },
         'preset@virtual'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@extended-by-virtual-foo'
         },
         'preset@extended-by-virtual-foo'
       ],
       [
-        presetIndex,
+        presetFn,
         {
           label: 'preset@virtual.foo'
         },

@@ -57,6 +57,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
   const zero = {
     fileType: 'JSON',
     options: {},
+    dir: '~',
     source: '0',
     runtimeHash: null
   }
@@ -67,6 +68,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
       presets: [['./bar', {hello: 'world'}]],
       sourceMaps: true
     },
+    dir: '~',
     source: '1',
     runtimeHash: null
   }
@@ -78,6 +80,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
       presets: [['qux']],
       sourceMaps: false
     },
+    dir: '~',
     source: '2',
     runtimeHash: null
   }
@@ -87,6 +90,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
       parserOpts: {foo: 2},
       presets: [['./bar', {goodbye: true}]]
     },
+    dir: '~',
     source: '3',
     runtimeHash: null
   }
@@ -95,6 +99,7 @@ const reduces = (t, defaultChain, envChains, expected) => {
     options: {
       plugins: ['quux']
     },
+    dir: '~',
     source: '4',
     runtimeHash: null
   }
@@ -136,12 +141,12 @@ const reduces = (t, defaultChain, envChains, expected) => {
         options: {
           parserOpts: {foo: 1},
           plugins: [
-            {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
-            {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'}
+            {dirname: '~', filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
+            {dirname: '~', filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'}
           ],
           presets: [
-            {filename: '~/bar.js', options: {hello: 'world'}, name: '🤡🎪🎟.2'},
-            {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
+            {dirname: '~', filename: '~/bar.js', options: {hello: 'world'}, name: '🤡🎪🎟.2'},
+            {dirname: '~', filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
           ],
           sourceMaps: false
         }
@@ -152,13 +157,13 @@ const reduces = (t, defaultChain, envChains, expected) => {
           options: {
             parserOpts: {foo: 2},
             plugins: [
-              {filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
-              {filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'},
-              {filename: '~/babel-plugin-quux/index.js', name: '🤡🎪🎟.8'}
+              {dirname: '~', filename: '~/babel-plugin-foo/index.js', name: '🤡🎪🎟.0'},
+              {dirname: '~', filename: '~/baz.js', options: {}, name: '🤡🎪🎟.4'},
+              {dirname: '~', filename: '~/babel-plugin-quux/index.js', name: '🤡🎪🎟.8'}
             ],
             presets: [
-              {filename: '~/bar.js', options: {goodbye: true}, name: '🤡🎪🎟.2'},
-              {filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
+              {dirname: '~', filename: '~/bar.js', options: {goodbye: true}, name: '🤡🎪🎟.2'},
+              {dirname: '~', filename: '~/babel-preset-qux/index.js', name: '🤡🎪🎟.6'}
             ],
             sourceMaps: false
           }
@@ -298,6 +303,7 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
   test('preserves object and function values for plugin and preset targets', reduces, Object.assign([
     {
       fileType: 'JSON',
+      dir: '~',
       options: {
         plugins: [
           pluginTarget1,
@@ -318,16 +324,16 @@ test('fileType becomes JSON5 if some of the configs were parsed using JSON5, aft
       fileType: 'JSON',
       options: {
         plugins: [
-          {target: pluginTarget1, name: '🤡🎪🎟.0'},
-          {target: pluginTarget2, name: '🤡🎪🎟.1'},
-          {target: pluginTarget3, options: {}, name: '🤡🎪🎟.2'},
-          {target: pluginTarget4, options: {}, name: 'name'}
+          {dirname: '~', target: pluginTarget1, name: '🤡🎪🎟.0'},
+          {dirname: '~', target: pluginTarget2, name: '🤡🎪🎟.1'},
+          {dirname: '~', target: pluginTarget3, options: {}, name: '🤡🎪🎟.2'},
+          {dirname: '~', target: pluginTarget4, options: {}, name: 'name'}
         ],
         presets: [
-          {target: presetTarget1, name: '🤡🎪🎟.3'},
-          {target: presetTarget2, name: '🤡🎪🎟.4'},
-          {target: presetTarget3, options: {}, name: '🤡🎪🎟.5'},
-          {target: presetTarget4, options: {}, name: 'name'}
+          {dirname: '~', target: presetTarget1, name: '🤡🎪🎟.3'},
+          {dirname: '~', target: presetTarget2, name: '🤡🎪🎟.4'},
+          {dirname: '~', target: presetTarget3, options: {}, name: '🤡🎪🎟.5'},
+          {dirname: '~', target: presetTarget4, options: {}, name: 'name'}
         ]
       }
     }], {overrides: []})

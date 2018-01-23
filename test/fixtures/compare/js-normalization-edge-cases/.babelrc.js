@@ -7,6 +7,7 @@ module.exports = api => {
   return {
     extends: './no-plugins-or-presets.js',
     plugins: [
+      [{}],
       [noop],
       ['module:noop2'],
       noop3,

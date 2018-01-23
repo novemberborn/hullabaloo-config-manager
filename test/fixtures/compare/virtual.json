@@ -9,7 +9,7 @@
   "sourceMaps": true,
   "env": {
     "foo": {
-      "extends": "./extended-by-virtual-foo.json5",
+      "extends": "./dir/extended-by-virtual-foo.json5",
       "plugins": [
         ["module:plugin", {"label": "plugin@virtual.foo"}, "plugin@virtual.foo"]
       ],

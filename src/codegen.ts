@@ -20,15 +20,16 @@ ${JSON.stringify(config.envName !== null)}, ${JSON.stringify(config.overrideInde
 
 function generateFactory (unflattened: ConfigList): string {
   return `(envName, cache) => {
+  const wrapperFns = new Map()
   return Object.assign(helpers.mergeOptions([
 ${unflattened.map(item => indentString(printConfig(item), 4)).join(',\n')}
-  ]), {
+], wrapperFns), {
     babelrc: false,
     envName,
     overrides: [
 ${unflattened.overrides.map(items => `      helpers.mergeOptions([
 ${items.map(item => indentString(printConfig(item), 8)).join(',\n')}
-      ])`).join(',\n')}
+      ], wrapperFns)`).join(',\n')}
     ]
   })
 }`

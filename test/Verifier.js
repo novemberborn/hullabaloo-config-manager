@@ -32,9 +32,9 @@ test.before(t => {
 
   for (const fp of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.js'),
+    fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js'),
     fixture('compare', 'extended-by-virtual.json5'),
-    fixture('compare', 'extended-by-virtual-foo.json5'),
+    fixture('compare', 'dir', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'virtual.json')
   ]) {
     promises.push(
@@ -94,9 +94,9 @@ test('cache is used when creating verifier', async t => {
   }
   for (const file of [
     fixture('compare', '.babelrc'),
-    fixture('compare', 'extended-by-babelrc.js'),
+    fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js'),
     fixture('compare', 'extended-by-virtual.json5'),
-    fixture('compare', 'extended-by-virtual-foo.json5'),
+    fixture('compare', 'dir', 'extended-by-virtual-foo.json5'),
     fixture('compare', 'virtual.json')
   ]) {
     t.true(cache.sourceHashes.has(file))
@@ -122,7 +122,7 @@ test('cacheKeysForEnv()', async t => {
     ]),
     sources: md5Hex([
       hashes[fixture('compare', '.babelrc')],
-      hashes[fixture('compare', 'extended-by-babelrc.js')],
+      hashes[fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js')],
       hashes[fixture('compare', 'extended-by-virtual.json5')],
       hashes[fixture('compare', 'virtual.json')]
     ])
@@ -137,8 +137,8 @@ test('cacheKeysForEnv()', async t => {
     ]),
     sources: md5Hex([
       hashes[fixture('compare', '.babelrc')],
-      hashes[fixture('compare', 'extended-by-babelrc.js')],
-      hashes[fixture('compare', 'extended-by-virtual-foo.json5')],
+      hashes[fixture('compare', 'dir', 'extended-by-virtual-foo.json5')],
+      hashes[fixture('compare', 'dir', 'subdir', 'extended-by-babelrc.js')],
       hashes[fixture('compare', 'extended-by-virtual.json5')],
       hashes[fixture('compare', 'virtual.json')]
     ])

@@ -1,5 +1,5 @@
 {
-  extends: './extended-by-babelrc.js',
+  extends: './dir/subdir/extended-by-babelrc.js',
   plugins: [
     ['module:plugin', {label: 'plugin@babelrc.1'}],
     ['module:plugin', {label: 'plugin@babelrc.2'}, 'plugin@babelrc.2'],
