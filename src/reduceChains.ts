@@ -88,6 +88,7 @@ function mapPluginOrPresetTarget (
 }
 
 export type PluginOrPresetDescriptor = {
+  dirname: string
   filename?: string
   name: string
   target?: object | Function
@@ -95,6 +96,7 @@ export type PluginOrPresetDescriptor = {
 }
 
 function describePluginOrPreset (
+  dirname: string,
   envName: string | null,
   dependencyMap: DependencyMap,
   nameMap: NameMap,
@@ -105,26 +107,26 @@ function describePluginOrPreset (
     const target = item[0]
     if (typeof target !== 'string') {
       switch (item.length) {
-        case 1: return {target, name: getPluginOrPresetName(nameMap, target)}
-        case 2: return {target, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, target)}
-        default: return {target, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+        case 1: return {dirname, target, name: getPluginOrPresetName(nameMap, target)}
+        case 2: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, target)}
+        default: return {dirname, target, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
       }
     }
 
     const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, target)
     switch (item.length) {
-      case 1: return {filename, name: getPluginOrPresetName(nameMap, filename)}
-      case 2: return {filename, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, filename)}
-      default: return {filename, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
+      case 1: return {dirname, filename, name: getPluginOrPresetName(nameMap, filename)}
+      case 2: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: getPluginOrPresetName(nameMap, filename)} // eslint-disable-line max-len
+      default: return {dirname, filename, options: item[1] as PluginOrPresetOptions, name: item[2] as string}
     }
   }
 
   if (typeof item === 'string') {
     const filename = mapPluginOrPresetTarget(envName, dependencyMap, getEntry, item)
-    return {filename, name: getPluginOrPresetName(nameMap, filename)}
+    return {dirname, filename, name: getPluginOrPresetName(nameMap, filename)}
   }
 
-  return {target: item, name: getPluginOrPresetName(nameMap, item)}
+  return {dirname, target: item, name: getPluginOrPresetName(nameMap, item)}
 }
 
 export interface ReducedBabelOptions extends BabelOptions {
@@ -214,10 +216,10 @@ function mergeChain (
     const getPresetEntry = (ref: string) => lookup.presets.get(ref)!
 
     const plugins = item.plugins.map(plugin => {
-      return describePluginOrPreset(envName, dependencyMap, nameMap, getPluginEntry, plugin)
+      return describePluginOrPreset(config.dir, envName, dependencyMap, nameMap, getPluginEntry, plugin)
     })
     const presets = item.presets.map(preset => {
-      return describePluginOrPreset(envName, dependencyMap, nameMap, getPresetEntry, preset)
+      return describePluginOrPreset(config.dir, envName, dependencyMap, nameMap, getPresetEntry, preset)
     })
 
     if (config.fileType === FileType.JS) {
