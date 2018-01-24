@@ -14,7 +14,7 @@ import mergePluginsOrPresets from './mergePluginsOrPresets'
 import normalizeOptions from './normalizeOptions'
 // FIXME: Remove ESLint exception. Entry *is* used but this isn't being detected.
 // eslint-disable-next-line no-unused-vars
-import resolvePluginsAndPresets, {Entry, ResolutionMap} from './resolvePluginsAndPresets'
+import resolvePluginsAndPresets, {Entry, PresetObject, Resolutions, ResolutionMap} from './resolvePluginsAndPresets'
 
 export interface Dependency {
   default: boolean
@@ -132,6 +132,41 @@ function describePluginOrPreset (
   return {dirname, target: item, name: getPluginOrPresetName(nameMap, item)}
 }
 
+function describePlugin (
+  dirname: string,
+  envName: string | null,
+  dependencyMap: DependencyMap,
+  nameMap: NameMap,
+  resolutions: Resolutions,
+  item: PluginOrPresetItem
+): PluginOrPresetDescriptor {
+  return describePluginOrPreset(dirname, envName, dependencyMap, nameMap, (ref: string) => resolutions.plugins.get(ref)!, item)
+}
+
+function describePreset (
+  dirname: string,
+  envName: string | null,
+  dependencyMap: DependencyMap,
+  nameMap: NameMap,
+  resolutions: Resolutions,
+  item: PluginOrPresetItem
+): PluginOrPresetDescriptor {
+  const descriptor = describePluginOrPreset(
+    dirname, envName, dependencyMap, nameMap, (ref: string) => resolutions.presets.get(ref)!, item
+  )
+  if (typeof descriptor.target === 'object') {
+    const target: PresetObject = {...descriptor.target}
+    if (Array.isArray(target.plugins)) {
+      target.plugins = target.plugins.map(plugin => describePlugin(dirname, envName, dependencyMap, nameMap, resolutions, plugin))
+    }
+    if (Array.isArray(target.presets)) {
+      target.presets = target.presets.map(preset => describePreset(dirname, envName, dependencyMap, nameMap, resolutions, preset))
+    }
+    descriptor.target = target
+  }
+  return descriptor
+}
+
 export interface ReducedBabelOptions extends BabelOptions {
   plugins: PluginOrPresetDescriptor[]
   presets: PluginOrPresetDescriptor[]
@@ -214,15 +249,12 @@ function mergeChain (
     // When used properly, pluginsAndPresets *will* contain a lookup for
     // `config`. Don't handle situations where this is not the case. This is an
     // internal module after all.
-    const lookup = pluginsAndPresets.get(config)!
-    const getPluginEntry = (ref: string) => lookup.plugins.get(ref)!
-    const getPresetEntry = (ref: string) => lookup.presets.get(ref)!
-
+    const resolutionMap = pluginsAndPresets.get(config)!
     const plugins = item.plugins.map(plugin => {
-      return describePluginOrPreset(config.dir, envName, dependencyMap, nameMap, getPluginEntry, plugin)
+      return describePlugin(config.dir, envName, dependencyMap, nameMap, resolutionMap, plugin)
     })
     const presets = item.presets.map(preset => {
-      return describePluginOrPreset(config.dir, envName, dependencyMap, nameMap, getPresetEntry, preset)
+      return describePreset(config.dir, envName, dependencyMap, nameMap, resolutionMap, preset)
     })
 
     if (plugins.length !== new Set(plugins.map(plugin => plugin.name)).size) {
