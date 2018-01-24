@@ -3,9 +3,19 @@ import path = require('path')
 import pkgDir = require('pkg-dir')
 import resolveFrom = require('resolve-from')
 
+import {PluginOrPresetList, PluginOrPresetTarget} from './BabelOptions'
 import Cache, {PluginsAndPresetsMap, PluginsAndPresetsMapValue} from './Cache'
 import {Chain, Chains, Config} from './collector'
 import standardizeName from './standardizeName'
+
+export interface PresetObject {
+  plugins?: PluginOrPresetList
+  presets?: PluginOrPresetList
+}
+
+function isPresetObject (target: PluginOrPresetTarget): target is PresetObject {
+  return typeof target === 'object'
+}
 
 export const enum Kind {
   PLUGIN = 'plugin',
@@ -28,7 +38,7 @@ class ResolveError extends Error {
   }
 }
 
-function normalize (arr: any): string[] {
+function normalize (arr: PluginOrPresetList | void): PluginOrPresetTarget[] {
   if (!Array.isArray(arr)) return []
 
   return arr.map(item => Array.isArray(item) ? item[0] : item)
@@ -53,10 +63,11 @@ export interface Entry {
   fromPackage: string | null
 }
 
-export type ResolutionMap = Map<Config, {
+export type Resolutions = {
   plugins: Map<string, Entry>
   presets: Map<string, Entry>
-}>
+}
+export type ResolutionMap = Map<Config, Resolutions>
 
 export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: Cache): ResolutionMap {
   const dirCaches: PluginsAndPresetsMap = sharedCache
@@ -93,13 +104,24 @@ export default function resolvePluginsAndPresets (chains: Chains, sharedCache?: 
         presets.set(ref, entry)
       }
     }
+    const resolvePlugins = (targets: PluginOrPresetTarget[]) => {
+      for (const target of targets) {
+        if (typeof target === 'string') resolve(Kind.PLUGIN, target)
+      }
+    }
+    const resolvePresets = (targets: PluginOrPresetTarget[]) => {
+      for (const target of targets) {
+        if (typeof target === 'string') {
+          resolve(Kind.PRESET, target)
+        } else if (isPresetObject(target)) {
+          resolvePlugins(normalize(target.plugins))
+          resolvePresets(normalize(target.presets))
+        }
+      }
+    }
 
-    for (const target of normalize(config.options.plugins)) {
-      if (typeof target === 'string') resolve(Kind.PLUGIN, target)
-    }
-    for (const target of normalize(config.options.presets)) {
-      if (typeof target === 'string') resolve(Kind.PRESET, target)
-    }
+    resolvePlugins(normalize(config.options.plugins))
+    resolvePresets(normalize(config.options.presets))
   }
 
   const resolveChains = (iterable: Iterable<Chain>) => {

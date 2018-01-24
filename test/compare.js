@@ -126,6 +126,21 @@ test.serial('resolved overrides config matches @babel/core', async t => {
   }
 })
 
+test.serial('resolved presets config matches @babel/core', async t => {
+  setBabelEnv()
+  setNodeEnv()
+
+  const cache = prepareCache()
+  const config = await fromDirectory(fixture('compare/presets'), {cache})
+  const configModule = runGeneratedCode(config.generateModule())
+  const filename = fixture('compare/presets/foo.js')
+
+  t.deepEqual(
+    transformChain(configModule.getOptions(null, cache), 'foo.js'),
+    transformBabel({filename, envName: 'foo'}),
+    '.babelrc: envName = foo')
+})
+
 // To reach 100% code coverage
 test.serial('resolved js-normalization-edge-cases config matches @babel/core', async t => {
   setBabelEnv()

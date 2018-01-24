@@ -1,0 +1,17 @@
+{
+  presets: [
+    {
+      plugins: [
+        ['module:plugin', {label: 'base->preset->plugin'}]
+      ],
+      presets: [
+        '../preset.js',
+        {
+          plugins: [
+            ['module:plugin', {label: 'base->preset->preset->plugin'}]
+          ]
+        }
+      ]
+    }
+  ]
+}
