@@ -1,3 +1,5 @@
+import {Kind} from './resolvePluginsAndPresets'
+
 export class SourceError extends Error {
   public readonly source: string
   public readonly parent: Error | null
@@ -25,8 +27,8 @@ export class ParseError extends SourceError {
 }
 
 export class InvalidFileError extends SourceError {
-  public constructor (source: string) {
-    super('Not a proper configuration file', source)
+  public constructor (source: string, message: string) {
+    super(message, source)
     this.name = 'InvalidFileError'
   }
 }
@@ -55,5 +57,27 @@ export class MultipleSourcesError extends SourceError {
     super('Multiple configuration files found', source)
     this.name = 'MultipleSourcesError'
     this.otherSource = otherSource
+  }
+}
+
+export class ResolveError extends SourceError {
+  public readonly source: string
+  public readonly ref: string
+  public readonly isPlugin: boolean
+  public readonly isPreset: boolean
+
+  public constructor (source: string, kind: Kind, ref: string, message?: string) {
+    super(message || `Couldn't find ${kind} ${JSON.stringify(ref)} relative to directory`, source)
+    this.name = 'ResolveError'
+    this.ref = ref
+    this.isPlugin = kind === 'plugin'
+    this.isPreset = kind === 'preset'
+  }
+}
+
+export class ResolveFromCacheError extends ResolveError {
+  public constructor (source: string, kind: Kind, ref: string) {
+    super(source, kind, ref, `Couldn't find ${kind} ${JSON.stringify(ref)} in cache`)
+    this.name = 'ResolveFromCacheError'
   }
 }

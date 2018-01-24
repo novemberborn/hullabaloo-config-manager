@@ -4,6 +4,7 @@ import resolveFrom = require('resolve-from')
 import Cache, {isUnrestrictedModuleSource, NameMap, PluginsAndPresetsMapValue} from './Cache'
 import BabelOptions, {PluginOrPresetItem, PluginOrPresetList, PluginOrPresetOptions, PluginOrPresetTarget} from './BabelOptions'
 import cloneOptions from './cloneOptions'
+import {ResolveFromCacheError} from './errors'
 import {PluginOrPresetDescriptor, ReducedBabelOptions} from './reduceChains'
 import getPluginOrPresetName from './getPluginOrPresetName'
 import loadPluginOrPreset from './loadPluginOrPreset'
@@ -13,9 +14,9 @@ import standardizeName from './standardizeName'
 import {Kind, PresetObject} from './resolvePluginsAndPresets'
 
 // Called for plugins and presets found when loading cached configuration modules.
-function resolvePluginOrPreset (resolutionCache: PluginsAndPresetsMapValue, kind: Kind, ref: string): string {
+function resolvePluginOrPreset (source: string, resolutionCache: PluginsAndPresetsMapValue, kind: Kind, ref: string): string {
   const name = standardizeName(kind, ref).name
-  if (!resolutionCache.has(name)) throw new Error(`Could not find previously resolved ${kind} in cache`)
+  if (!resolutionCache.has(name)) throw new ResolveFromCacheError(source, kind, ref)
   return resolutionCache.get(name)!
 }
 
@@ -33,6 +34,7 @@ interface DescribedPresetObject extends PresetObject {
 
 function describePluginOrPreset (
   dirname: string,
+  source: string,
   resolutionCache: PluginsAndPresetsMapValue,
   nameMap: NameMap,
   item: PluginOrPresetItem,
@@ -49,7 +51,7 @@ function describePluginOrPreset (
       }
     }
 
-    const filename = resolvePluginOrPreset(resolutionCache, kind, target)
+    const filename = resolvePluginOrPreset(source, resolutionCache, kind, target)
     const name = getPluginOrPresetName(nameMap, filename)
     switch (item.length) {
       case 1: return {dirname, filename, name}
@@ -59,7 +61,7 @@ function describePluginOrPreset (
   }
 
   if (typeof item === 'string') {
-    const filename = resolvePluginOrPreset(resolutionCache, kind, item)
+    const filename = resolvePluginOrPreset(source, resolutionCache, kind, item)
     return {dirname, filename, name: getPluginOrPresetName(nameMap, filename)}
   }
 
@@ -70,29 +72,31 @@ function describePluginOrPreset (
 // configuration files.
 function describePlugin (
   dirname: string,
+  source: string,
   resolutionCache: PluginsAndPresetsMapValue,
   nameMap: NameMap,
   item: PluginOrPresetItem
 ): PluginOrPresetDescriptor {
-  return describePluginOrPreset(dirname, resolutionCache, nameMap, item, Kind.PLUGIN)
+  return describePluginOrPreset(dirname, source, resolutionCache, nameMap, item, Kind.PLUGIN)
 }
 
 // Rewrite presets from cached configuration modules to match those from regular
 // configuration files.
 function describePreset (
   dirname: string,
+  source: string,
   resolutionCache: PluginsAndPresetsMapValue,
   nameMap: NameMap,
   item: PluginOrPresetItem
 ): PluginOrPresetDescriptor {
-  const descriptor = describePluginOrPreset(dirname, resolutionCache, nameMap, item, Kind.PRESET)
+  const descriptor = describePluginOrPreset(dirname, source, resolutionCache, nameMap, item, Kind.PRESET)
   if (typeof descriptor.target === 'object') {
     const target: PresetObject = {...descriptor.target}
     if (Array.isArray(target.plugins)) {
-      target.plugins = target.plugins.map(plugin => describePlugin(dirname, resolutionCache, nameMap, plugin))
+      target.plugins = target.plugins.map(plugin => describePlugin(dirname, source, resolutionCache, nameMap, plugin))
     }
     if (Array.isArray(target.presets)) {
-      target.presets = target.presets.map(preset => describePreset(dirname, resolutionCache, nameMap, preset))
+      target.presets = target.presets.map(preset => describePreset(dirname, source, resolutionCache, nameMap, preset))
     }
     descriptor.target = target
   }
@@ -260,12 +264,12 @@ export function loadCachedModule (
 
   const resolutionCache = cache.pluginsAndPresets.get(dir)!
   if (Array.isArray(options.plugins)) {
-    options.plugins = options.plugins.map(item => describePlugin(dir, resolutionCache, cache.nameMap, item))
+    options.plugins = options.plugins.map(item => describePlugin(dir, source, resolutionCache, cache.nameMap, item))
   } else {
     options.plugins = []
   }
   if (Array.isArray(options.presets)) {
-    options.presets = options.presets.map(item => describePreset(dir, resolutionCache, cache.nameMap, item))
+    options.presets = options.presets.map(item => describePreset(dir, source, resolutionCache, cache.nameMap, item))
   } else {
     options.presets = []
   }
