@@ -258,10 +258,10 @@ function mergeChain (
     })
 
     if (plugins.length !== new Set(plugins.map(plugin => plugin.name)).size) {
-      throw new InvalidFileError(config.source)
+      throw new InvalidFileError(config.source, 'Duplicate plugins detected')
     }
     if (presets.length !== new Set(presets.map(preset => preset.name)).size) {
-      throw new InvalidFileError(config.source)
+      throw new InvalidFileError(config.source, 'Duplicate presets detected')
     }
 
     if (config.fileType === FileType.JS) {

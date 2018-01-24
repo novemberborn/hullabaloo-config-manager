@@ -24,41 +24,47 @@ function has (obj: object, key: string) {
 }
 
 function validateOptions (source: string, options: any): BabelOptions {
-  if (!options) throw new InvalidFileError(source)
-  if (typeof options !== 'object') throw new InvalidFileError(source)
-  if (Array.isArray(options)) throw new InvalidFileError(source)
+  if (!options) throw new InvalidFileError(source, 'Options must be an object')
+  if (typeof options !== 'object') throw new InvalidFileError(source, 'Options must be an object')
+  if (Array.isArray(options)) throw new InvalidFileError(source, 'Options must be an object and not an array')
 
   // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L251:L255
-  if (has(options, 'sourceMap') && has(options, 'sourceMaps')) throw new InvalidFileError(source)
+  if (has(options, 'sourceMap') && has(options, 'sourceMaps')) {
+    throw new InvalidFileError(source, '.sourceMap is an alias for .sourceMaps, cannot use both')
+  }
 
   // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L19:L36
-  if (has(options, 'cwd')) throw new InvalidFileError(source)
-  if (has(options, 'filename')) throw new InvalidFileError(source)
-  if (has(options, 'filenameRelative')) throw new InvalidFileError(source)
-  if (has(options, 'babelrc')) throw new InvalidFileError(source)
-  if (has(options, 'code')) throw new InvalidFileError(source)
-  if (has(options, 'ast')) throw new InvalidFileError(source)
-  if (has(options, 'envName')) throw new InvalidFileError(source)
+  if (has(options, 'cwd')) throw new InvalidFileError(source, '.cwd cannot be used here')
+  if (has(options, 'filename')) throw new InvalidFileError(source, '.filename cannot be used here')
+  if (has(options, 'filenameRelative')) throw new InvalidFileError(source, '.filenameRelative cannot be used here')
+  if (has(options, 'babelrc')) throw new InvalidFileError(source, '.babelrc cannot be used here')
+  if (has(options, 'code')) throw new InvalidFileError(source, '.code cannot be used here')
+  if (has(options, 'ast')) throw new InvalidFileError(source, '.ast cannot be used here')
+  if (has(options, 'envName')) throw new InvalidFileError(source, '.envName cannot be used here')
 
   if (has(options, 'env')) {
     for (const envName in options.env) {
       // See https://github.com/babel/babel/blob/509dbb7302ee15d0243118afc09dde56b2987c38/packages/babel-core/src/config/options.js#L216:L218
-      if (has(options.env[envName], 'env')) throw new InvalidFileError(source)
+      if (has(options.env[envName], 'env')) {
+        throw new InvalidFileError(source, '.env is not allowed inside another env block')
+      }
       // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L246:L257
-      if (has(options.env[envName], 'overrides')) throw new InvalidFileError(source)
+      if (has(options.env[envName], 'overrides')) {
+        throw new InvalidFileError(source, '.overrides is not allowed inside an env block')
+      }
     }
   }
 
   if (has(options, 'overrides')) {
     // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L304
     if (options.overrides !== null && options.overrides !== undefined && !Array.isArray(options.overrides)) {
-      throw new InvalidFileError(source)
+      throw new InvalidFileError(source, '.overrides must be an array')
     }
     for (const override of options.overrides) {
       // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/config-chain.js#L257:L258
-      if (!override) throw new InvalidFileError(source)
+      if (!override) throw new InvalidFileError(source, `.overrides must only contain objects`)
       // See https://github.com/babel/babel/blob/2d05487293278286e352d7acc0761751025b4b1a/packages/babel-core/src/config/validation/options.js#L249:L250
-      if (has(override, 'overrides')) throw new InvalidFileError(source)
+      if (has(override, 'overrides')) throw new InvalidFileError(source, '.override is not allowed inside an overrides block')
     }
   }
 
@@ -124,7 +130,9 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
   const dependencies = configModule.dependencies
   const options = configModule.options
   if (typeof options !== 'function') {
-    if (options && typeof options.then === 'function') throw new InvalidFileError(source)
+    if (options && typeof options.then === 'function') {
+      throw new InvalidFileError(source, 'Asynchronous configuration modules are not supported')
+    }
 
     const validOptions = validateOptions(source, options)
     const result: UnrestrictedModuleSource = {
@@ -167,8 +175,10 @@ function resolveModule (source: string, envName: string, cache?: Cache): Resolve
     }
     babelCache.seal()
 
-    if (!babelCache.wasConfigured) throw new InvalidFileError(source)
-    if (possibleOptions && typeof possibleOptions.then === 'function') throw new InvalidFileError(source)
+    if (!babelCache.wasConfigured) throw new InvalidFileError(source, 'Caching must be configured')
+    if (possibleOptions && typeof possibleOptions.then === 'function') {
+      throw new InvalidFileError(source, 'Asynchronous configuration modules are not supported')
+    }
 
     return {
       options: validateOptions(source, possibleOptions),

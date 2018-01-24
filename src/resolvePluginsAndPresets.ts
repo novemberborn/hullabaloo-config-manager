@@ -6,6 +6,7 @@ import resolveFrom = require('resolve-from')
 import {PluginOrPresetList, PluginOrPresetTarget} from './BabelOptions'
 import Cache, {PluginsAndPresetsMap, PluginsAndPresetsMapValue} from './Cache'
 import {Chain, Chains, Config} from './collector'
+import {ResolveError} from './errors'
 import standardizeName from './standardizeName'
 
 export interface PresetObject {
@@ -20,22 +21,6 @@ function isPresetObject (target: PluginOrPresetTarget): target is PresetObject {
 export const enum Kind {
   PLUGIN = 'plugin',
   PRESET = 'preset'
-}
-
-class ResolveError extends Error {
-  public readonly source: string
-  public readonly ref: string
-  public readonly isPlugin: boolean
-  public readonly isPreset: boolean
-
-  public constructor (source: string, kind: Kind, ref: string) {
-    super(`${source}: Couldn't find ${kind} ${JSON.stringify(ref)} relative to directory`)
-    this.name = 'ResolveError'
-    this.source = source
-    this.ref = ref
-    this.isPlugin = kind === 'plugin'
-    this.isPreset = kind === 'preset'
-  }
 }
 
 function normalize (arr: PluginOrPresetList | void): PluginOrPresetTarget[] {
