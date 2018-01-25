@@ -624,6 +624,28 @@ test('fromConfig() works without cache', async t => {
   })))
 })
 
+test('fromConfig() puts virtual configs in module source cache if fileType is JS', async t => {
+  const dir = fixture('compare')
+  const cache = prepareCache()
+  const result = await fromConfig(createConfig({
+    dir,
+    fileType: 'JS',
+    options: {
+      babelrc: false,
+      plugins: [pluginFn]
+    },
+    source: 'foo'
+  }), {cache})
+  const configModule = runGeneratedCode(result.generateModule())
+
+  t.deepEqual(replaceWrapped(configModule.getOptions(null, cache)), {
+    babelrc: false,
+    envName: 'test',
+    overrides: [],
+    plugins: [[pluginFn, undefined, '🤡🎪🎟.0']]
+  })
+})
+
 test('prepareCache()', t => {
   const cache = prepareCache()
   t.deepEqual(Object.keys(cache), [
