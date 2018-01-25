@@ -1,6 +1,6 @@
-import {PluginOrPresetDescriptor} from './reduceChains'
+import {PluginOrPresetDescriptorList} from './reduceChains'
 
-export default function mergePluginsOrPresets (target: PluginOrPresetDescriptor[], source: PluginOrPresetDescriptor[]) {
+export default function mergePluginsOrPresets (target: PluginOrPresetDescriptorList, source: PluginOrPresetDescriptorList) {
   const reverseLookup = new Map(target.map<[string, number]>((item, index) => {
     return [item.name, index]
   }))

@@ -88,12 +88,24 @@ function mapPluginOrPresetTarget (
   return entry.filename
 }
 
+export type PluginOrPresetFileDescriptor = {
+  dirname: string
+  filename: string
+  name: string
+  options?: PluginOrPresetOptions
+}
 export type PluginOrPresetDescriptor = {
   dirname: string
-  filename?: string
   name: string
-  target?: object | Function
+  target: object | Function
   options?: PluginOrPresetOptions
+}
+export type PluginOrPresetDescriptorList = Array<PluginOrPresetFileDescriptor | PluginOrPresetDescriptor>
+
+export function isFileDescriptor (
+  descriptor: PluginOrPresetFileDescriptor | PluginOrPresetDescriptor
+): descriptor is PluginOrPresetFileDescriptor {
+  return 'filename' in descriptor
 }
 
 function describePluginOrPreset (
@@ -103,7 +115,7 @@ function describePluginOrPreset (
   nameMap: NameMap,
   getEntry: (ref: string) => Entry,
   item: PluginOrPresetItem
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   if (Array.isArray(item)) {
     const target = item[0]
     if (typeof target !== 'string') {
@@ -139,7 +151,7 @@ function describePlugin (
   nameMap: NameMap,
   resolutions: Resolutions,
   item: PluginOrPresetItem
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   return describePluginOrPreset(dirname, envName, dependencyMap, nameMap, (ref: string) => resolutions.plugins.get(ref)!, item)
 }
 
@@ -150,11 +162,11 @@ function describePreset (
   nameMap: NameMap,
   resolutions: Resolutions,
   item: PluginOrPresetItem
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   const descriptor = describePluginOrPreset(
     dirname, envName, dependencyMap, nameMap, (ref: string) => resolutions.presets.get(ref)!, item
   )
-  if (typeof descriptor.target === 'object') {
+  if (!isFileDescriptor(descriptor) && typeof descriptor.target === 'object') {
     const target: PresetObject = {...descriptor.target}
     if (Array.isArray(target.plugins)) {
       target.plugins = target.plugins.map(plugin => describePlugin(dirname, envName, dependencyMap, nameMap, resolutions, plugin))
@@ -168,8 +180,8 @@ function describePreset (
 }
 
 export interface ReducedBabelOptions extends BabelOptions {
-  plugins: PluginOrPresetDescriptor[]
-  presets: PluginOrPresetDescriptor[]
+  plugins: PluginOrPresetDescriptorList
+  presets: PluginOrPresetDescriptorList
 }
 
 export interface MergedConfig {
