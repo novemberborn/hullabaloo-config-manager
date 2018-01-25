@@ -67,7 +67,8 @@ If the config source does not exist on disk the `hash` value should be provided,
 otherwise hashes cannot be created for the config.
 
 The `fileType` property can be set to `JSON` if the `options` object can be
-serialized using `JSON.stringify()`. It defaults to `JSON5`.
+serialized using `JSON.stringify()`. It defaults to `JSON5`. Use `JS` if the
+`options` object contains functions, maps, et cetera.
 
 Note that the `options` object is cloned before use. Options are not validated
 to the same extend as when configuration files are loaded using `fromDirectory`
@@ -134,6 +135,10 @@ An environment name can be provided when calling `getOptions()`, e.g.
 `getOptions('production')`. If no name is provided, or the name is not a string,
 the environment is determined by checking `process.env.BABEL_ENV`,
 `process.env.NODE_ENV`, and finally defaulting to `'development'`.
+
+A second `cache` argument must be provided if the resolved configuration
+contains JavaScript sources, e.g. `getOptions('production', cache)`. This should
+be the same object as passed to `fromConfig()` and `fromDirectory()`.
 
 #### `ResolvedConfig#createVerifier(): Promise<Verifier>`
 
