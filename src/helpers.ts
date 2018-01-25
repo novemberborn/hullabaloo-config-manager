@@ -5,7 +5,13 @@ import Cache, {isUnrestrictedModuleSource, NameMap, PluginsAndPresetsMapValue} f
 import BabelOptions, {PluginOrPresetItem, PluginOrPresetList, PluginOrPresetOptions, PluginOrPresetTarget} from './BabelOptions'
 import cloneOptions from './cloneOptions'
 import {ResolveFromCacheError} from './errors'
-import {PluginOrPresetDescriptor, ReducedBabelOptions} from './reduceChains'
+import {
+  isFileDescriptor,
+  PluginOrPresetFileDescriptor,
+  PluginOrPresetDescriptor,
+  PluginOrPresetDescriptorList,
+  ReducedBabelOptions
+} from './reduceChains'
 import getPluginOrPresetName from './getPluginOrPresetName'
 import loadPluginOrPreset from './loadPluginOrPreset'
 import mergePluginsOrPresets from './mergePluginsOrPresets'
@@ -28,8 +34,8 @@ function resolveDynamicPluginOrPreset (kind: Kind, dirname: string, ref: string)
 }
 
 interface DescribedPresetObject extends PresetObject {
-  plugins?: PluginOrPresetDescriptor[]
-  presets?: PluginOrPresetDescriptor[]
+  plugins?: PluginOrPresetDescriptorList
+  presets?: PluginOrPresetDescriptorList
 }
 
 function describePluginOrPreset (
@@ -39,7 +45,7 @@ function describePluginOrPreset (
   nameMap: NameMap,
   item: PluginOrPresetItem,
   kind: Kind
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   if (Array.isArray(item)) {
     const target = item[0]
     if (typeof target !== 'string') {
@@ -76,7 +82,7 @@ function describePlugin (
   resolutionCache: PluginsAndPresetsMapValue,
   nameMap: NameMap,
   item: PluginOrPresetItem
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   return describePluginOrPreset(dirname, source, resolutionCache, nameMap, item, Kind.PLUGIN)
 }
 
@@ -88,9 +94,9 @@ function describePreset (
   resolutionCache: PluginsAndPresetsMapValue,
   nameMap: NameMap,
   item: PluginOrPresetItem
-): PluginOrPresetDescriptor {
+): PluginOrPresetFileDescriptor | PluginOrPresetDescriptor {
   const descriptor = describePluginOrPreset(dirname, source, resolutionCache, nameMap, item, Kind.PRESET)
-  if (typeof descriptor.target === 'object') {
+  if (!isFileDescriptor(descriptor) && typeof descriptor.target === 'object') {
     const target: PresetObject = {...descriptor.target}
     if (Array.isArray(target.plugins)) {
       target.plugins = target.plugins.map(plugin => describePlugin(dirname, source, resolutionCache, nameMap, plugin))
@@ -108,7 +114,7 @@ export type WrapperFnMap = Map<PluginOrPresetTarget, WrapperFn>
 export type WrapperFnDirMap = Map<string, WrapperFnMap>
 
 function arrifyPluginsOrPresets (
-  list: PluginOrPresetDescriptor[],
+  list: PluginOrPresetDescriptorList,
   wrapperFnsByDir: WrapperFnDirMap,
   rewrite?: (dirname: string, pluginOrPreset: object) => object
 ): PluginOrPresetList {
@@ -122,12 +128,12 @@ function arrifyPluginsOrPresets (
     }
 
     let target: object | Function
-    if (typeof item.target === 'object') {
+    if (!isFileDescriptor(item) && typeof item.target === 'object') {
       target = item.target
     } else if (wrapperFns.has(item.name)) {
       target = wrapperFns.get(item.name)!
     } else {
-      const wrapped = item.target || loadPluginOrPreset(item.filename!)
+      const wrapped = isFileDescriptor(item) ? loadPluginOrPreset(item.filename) : item.target as Function
       const targetFn: WrapperFn = Object.assign(
         rewrite
           ? (api: any, options: any) => rewrite(item.dirname, wrapped(api, options, item.dirname))
@@ -141,7 +147,7 @@ function arrifyPluginsOrPresets (
 }
 
 // Turn plugin objects back into arrays for use in Babel.
-function arrifyPlugins (list: PluginOrPresetDescriptor[], wrapperFnsByDir: WrapperFnDirMap): PluginOrPresetList {
+function arrifyPlugins (list: PluginOrPresetDescriptorList, wrapperFnsByDir: WrapperFnDirMap): PluginOrPresetList {
   return arrifyPluginsOrPresets(list, wrapperFnsByDir)
 }
 
@@ -221,7 +227,7 @@ function rewritePreset (dirname: string, obj: PresetObject): PresetObject {
 }
 
 // Turn preset objects back into arrays for use in Babel.
-function arrifyPresets (list: PluginOrPresetDescriptor[], wrapperFnsByDir: WrapperFnDirMap): PluginOrPresetList {
+function arrifyPresets (list: PluginOrPresetDescriptorList, wrapperFnsByDir: WrapperFnDirMap): PluginOrPresetList {
   return arrifyPluginsOrPresets(list, wrapperFnsByDir, rewritePreset).map(preset => {
     const target = (preset as [DescribedPresetObject])[0]
     if (typeof target === 'object') {
