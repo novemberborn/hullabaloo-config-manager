@@ -358,6 +358,8 @@ export class OverrideConfig extends Config {
   }
 }
 
+export class VirtualConfig extends Config {}
+
 export class RestrictedConfig extends Config {}
 async function resolveDirectory (dir: string, expectedEnvNames: string[], cache?: Cache): Promise<Config | null> {
   const fileSource = path.resolve(dir, '.babelrc')
@@ -534,6 +536,15 @@ class Collector {
     // config's parent.
     if (reusePointer(config)) {
       this.pointers.set(config.source, pointer)
+    }
+
+    if (this.cache && config instanceof VirtualConfig && config.fileType === FileType.JS) {
+      this.cache.moduleSources.set(config.source, {
+        options: cloneOptions(config.options),
+        runtimeDependencies: new Map(),
+        runtimeHash: null,
+        unrestricted: true
+      })
     }
 
     // Collect promises so they can run concurrently and be awaited at the end
