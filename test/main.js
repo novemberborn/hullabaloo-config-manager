@@ -646,6 +646,18 @@ test('fromConfig() puts virtual configs in module source cache if fileType is JS
   })
 })
 
+test('explicit hashes can be empty strings', async t => {
+  const cache = prepareCache()
+  const result = await fromConfig(createConfig({
+    options: {},
+    hash: '',
+    source: '👋'
+  }), {cache})
+
+  await result.createVerifier()
+  t.pass()
+})
+
 test('prepareCache()', t => {
   const cache = prepareCache()
   t.deepEqual(Object.keys(cache), [

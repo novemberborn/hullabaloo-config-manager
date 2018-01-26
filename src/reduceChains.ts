@@ -254,7 +254,7 @@ function mergeChain (
         trackDependency(dependencyMap, filename, fromPackage, envName)
       }
     }
-    if (config.hash) {
+    if (config.hash !== null) {
       fixedSourceHashes.set(config.source, config.hash)
     }
 
