@@ -33,7 +33,7 @@ export function createConfig (options: CreateOptions): collector.VirtualConfig {
 
   const source = options.source
   const dir = options.dir || path.dirname(source)
-  const hash = options.hash || null
+  const hash = typeof options.hash === 'string' ? options.hash : null
   const fileType = typeof options.fileType === 'string' ? options.fileType : collector.FileType.JSON5
   const babelOptions = cloneOptions(options.options)
 
