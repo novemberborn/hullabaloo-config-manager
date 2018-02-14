@@ -1,6 +1,6 @@
 {
   "name": "hullabaloo-config-manager",
-  "version": "2.0.0-beta.2",
+  "version": "2.0.0-beta.3",
   "description": "Manages complex Babel config chains, avoiding duplicated work and enabling effective caching",
   "main": "build/main.js",
   "files": [
