@@ -54,7 +54,6 @@ declare interface BabelOptions extends LimitedOptions {
   // Sourcemap generation options.
   sourceMaps?: boolean | 'inline' | 'both'
   sourceMap?: boolean | 'inline' | 'both'
-  sourceMapTarget?: string
   sourceFileName?: string
   sourceRoot?: string
 
