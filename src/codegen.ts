@@ -7,8 +7,8 @@ import ResolvedConfig from './ResolvedConfig'
 
 function stringify (asJson5: boolean, value: object): string {
   return asJson5
-    ? json5.stringify(value, null, 2)
-    : JSON.stringify(value, null, 2)
+    ? json5.stringify(value, undefined, 2)
+    : JSON.stringify(value, undefined, 2)
 }
 
 function printConfig (config: MergedConfig | ModuleConfig) {
