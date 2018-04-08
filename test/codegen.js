@@ -41,7 +41,7 @@ test('by default stringifies using JSON5', async t => {
   }))
   const code = codegen(reduceChains(chains))
 
-  t.true(code.includes('sourceType: "module"'))
+  t.true(code.includes("sourceType: 'module'"))
 })
 
 test('generates a nicely indented module', async t => {
