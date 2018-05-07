@@ -56,8 +56,6 @@
     "@types/dot-prop": "^4.2.0",
     "@types/graceful-fs": "^4.1.2",
     "@types/indent-string": "^3.0.0",
-    "@types/lodash.isequal": "^4.5.2",
-    "@types/lodash.merge": "^4.6.3",
     "@types/node": "^10.0.4",
     "ava": "^0.25.0",
     "codecov": "^3.0.1",
@@ -67,7 +65,7 @@
     "proxyquire": "^2.0.1",
     "replace-string": "^1.1.0",
     "testdouble": "^3.8.1",
-    "typescript": "^2.6.2",
+    "typescript": "^2.8.3",
     "unique-temp-dir": "^1.0.0"
   },
   "ava": {
