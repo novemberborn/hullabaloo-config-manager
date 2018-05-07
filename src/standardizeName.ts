@@ -22,5 +22,11 @@ export default function standardizeName (kind: Kind, ref: string): {fromFile: bo
   const scope = matches[1]
   const partialName = matches[2]
   const remainder = matches[3]
-  return {fromFile: false, name: `${scope}/babel-${kind === Kind.PLUGIN ? 'plugin' : 'preset'}-${partialName}${remainder}`}
+  if (kind === Kind.PLUGIN) {
+    if (partialName.startsWith('babel-plugin-')) return {fromFile: false, name: ref}
+    return {fromFile: false, name: `${scope}/babel-plugin-${partialName}${remainder}`}
+  } else {
+    if (partialName.startsWith('babel-preset-')) return {fromFile: false, name: ref}
+    return {fromFile: false, name: `${scope}/babel-preset-${partialName}${remainder}`}
+  }
 }
