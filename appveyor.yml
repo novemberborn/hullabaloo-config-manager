@@ -26,7 +26,7 @@ matrix:
       nodejs_version: '6'
 install:
   - ps: Install-Product node $env:nodejs_version
-  - npm install --global npm@5.9.0-next.0
+  - npm install --global npm@6.0.0
   - npm --version
   - if %configuration% == FreshDeps (npm install --no-shrinkwrap --prefer-online)
   - if %configuration% == LockedDeps (npm ci)

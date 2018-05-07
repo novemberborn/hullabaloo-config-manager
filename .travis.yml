@@ -19,7 +19,7 @@ cache:
   directories:
     - $HOME/.npm
 before_install:
-  - npm install --global npm@5.9.0-next.0
+  - npm install --global npm@6.0.0
   - npm --version
 install: |
   if [[ ${FRESH_DEPS} == "true" ]]; then
