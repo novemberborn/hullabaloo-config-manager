@@ -4,10 +4,12 @@
     ['module:plugin', {label: 'plugin@babelrc.1'}],
     ['module:plugin', {label: 'plugin@babelrc.2'}, 'plugin@babelrc.2'],
     ['module:plugin', {label: 'plugin@babelrc.3'}, 'plugin@babelrc.3'],
-    ['module:plugin', {label: 'plugin-not-copied'}, 'copy-or-not']
+    ['module:plugin', {label: 'plugin-not-copied'}, 'copy-or-not'],
+    ['@scope/babel-plugin-plugin', {label: '@scope/babel-plugin-plugin'}]
   ],
   presets: [
-    ['module:preset', {label: 'preset@babelrc'}, 'preset@babelrc']
+    ['module:preset', {label: 'preset@babelrc'}, 'preset@babelrc'],
+    ['@scope/babel-preset-preset', {label: '@scope/babel-preset-preset'}]
   ],
   env: {
     foo: {

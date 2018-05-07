@@ -24,7 +24,9 @@ test.before(t => {
     fixture('compare', 'node_modules', 'plugin', 'package.json'),
     fixture('compare', 'node_modules', 'plugin-copy', 'package.json'),
     fixture('compare', 'node_modules', 'plugin-default-opts', 'package.json'),
-    fixture('compare', 'node_modules', 'preset', 'package.json')
+    fixture('compare', 'node_modules', 'preset', 'package.json'),
+    fixture('compare', 'node_modules', '@scope', 'babel-plugin-plugin', 'package.json'),
+    fixture('compare', 'node_modules', '@scope', 'babel-preset-preset', 'package.json')
   ]) {
     promises.push(
       packageHash(pkg)
@@ -118,6 +120,8 @@ test('cacheKeysForEnv()', async t => {
 
   t.deepEqual(verifier.cacheKeysForEnv(), {
     dependencies: md5Hex([
+      hashes[fixture('compare', 'node_modules', '@scope', 'babel-plugin-plugin', 'package.json')],
+      hashes[fixture('compare', 'node_modules', '@scope', 'babel-preset-preset', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin-copy', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'preset', 'package.json')]
@@ -132,6 +136,8 @@ test('cacheKeysForEnv()', async t => {
 
   t.deepEqual(verifier.cacheKeysForEnv('foo'), {
     dependencies: md5Hex([
+      hashes[fixture('compare', 'node_modules', '@scope', 'babel-plugin-plugin', 'package.json')],
+      hashes[fixture('compare', 'node_modules', '@scope', 'babel-preset-preset', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'env-plugin', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin-copy', 'package.json')],
       hashes[fixture('compare', 'node_modules', 'plugin-default-opts', 'package.json')],

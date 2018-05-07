@@ -11,6 +11,8 @@ import pluginCopyFn from './fixtures/compare/node_modules/plugin-copy'
 import pluginDefaultOptsFn from './fixtures/compare/node_modules/plugin-default-opts'
 import pluginFn from './fixtures/compare/node_modules/plugin'
 import presetFn from './fixtures/compare/node_modules/preset'
+import scopedPluginFn from './fixtures/compare/node_modules/@scope/babel-plugin-plugin'
+import scopedPresetFn from './fixtures/compare/node_modules/@scope/babel-preset-preset'
 
 function mockCurrentEnv (env = {}) {
   return proxyquire('..', {
@@ -211,6 +213,13 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'plugin-not-copied'
         },
         '🤡🎪🎟.0.copy-or-not'
+      ],
+      [
+        scopedPluginFn,
+        {
+          label: '@scope/babel-plugin-plugin'
+        },
+        '🤡🎪🎟.5'
       ]
     ],
     presets: [
@@ -227,6 +236,13 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'preset@babelrc'
         },
         '🤡🎪🎟.4.preset@babelrc'
+      ],
+      [
+        scopedPresetFn,
+        {
+          label: '@scope/babel-preset-preset'
+        },
+        '🤡🎪🎟.8'
       ]
     ],
     babelrc: false,
@@ -281,6 +297,13 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
         '🤡🎪🎟.0.copy-or-not'
       ],
       [
+        scopedPluginFn,
+        {
+          label: '@scope/babel-plugin-plugin'
+        },
+        '🤡🎪🎟.5'
+      ],
+      [
         envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
@@ -290,7 +313,7 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
       [
         pluginDefaultOptsFn,
         undefined,
-        '🤡🎪🎟.7'
+        '🤡🎪🎟.11'
       ]
     ],
     presets: [
@@ -314,6 +337,13 @@ test('fromDirectory() resolves options, dependencies, uses cache, and can genera
           label: 'preset@babelrc'
         },
         '🤡🎪🎟.4.preset@babelrc'
+      ],
+      [
+        scopedPresetFn,
+        {
+          label: '@scope/babel-preset-preset'
+        },
+        '🤡🎪🎟.8'
       ],
       [
         presetFn,
@@ -402,6 +432,13 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         '🤡🎪🎟.0.copy-or-not'
       ],
       [
+        scopedPluginFn,
+        {
+          label: '@scope/babel-plugin-plugin'
+        },
+        '🤡🎪🎟.5'
+      ],
+      [
         pluginFn,
         {
           label: 'plugin@extended-by-virtual'
@@ -430,6 +467,13 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'preset@babelrc'
         },
         '🤡🎪🎟.4.preset@babelrc'
+      ],
+      [
+        scopedPresetFn,
+        {
+          label: '@scope/babel-preset-preset'
+        },
+        '🤡🎪🎟.8'
       ],
       [
         presetFn,
@@ -498,6 +542,13 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
         '🤡🎪🎟.0.copy-or-not'
       ],
       [
+        scopedPluginFn,
+        {
+          label: '@scope/babel-plugin-plugin'
+        },
+        '🤡🎪🎟.5'
+      ],
+      [
         envPluginFn,
         {
           label: 'env-plugin@babelrc.foo'
@@ -507,7 +558,7 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
       [
         pluginDefaultOptsFn,
         undefined,
-        '🤡🎪🎟.7'
+        '🤡🎪🎟.11'
       ],
       [
         pluginFn,
@@ -566,6 +617,13 @@ test('fromConfig() resolves options, dependencies, uses cache, and can generate 
           label: 'preset@babelrc'
         },
         '🤡🎪🎟.4.preset@babelrc'
+      ],
+      [
+        scopedPresetFn,
+        {
+          label: '@scope/babel-preset-preset'
+        },
+        '🤡🎪🎟.8'
       ],
       [
         presetFn,
